@@ -65,12 +65,12 @@ void Hydrograph::getCLim(double &c1, double &c2) const
 
 void Hydrograph::setBruteforceParams(const int &steps, const int &it)
 {
-
+	mCal->setBFParams(steps, it);
 }
 
-bool Hydrograph::loadMlcm(const char *paramFile)
+void Hydrograph::loadMlcm(const char *paramFile)
 {
-	return mMlcmSh->loadParametrs(paramFile);
+	mMlcmSh->loadParametrs(paramFile);
 }
 
 void Hydrograph::printMlcm(const char *outputParamFile)
@@ -78,9 +78,9 @@ void Hydrograph::printMlcm(const char *outputParamFile)
 	mMlcmSh->printParams(outputParamFile);
 }
 
-bool Hydrograph::printPrediction(const int *begDate, const int *endDate)
+void Hydrograph::printPrediction(const int *begDate, const int *endDate)
 {
-	return mMlcmSh->printPrediction(begDate, endDate);
+	mMlcmSh->printPrediction(begDate, endDate);
 }
 
 double Hydrograph::printPredAndValid(const int *begDate, const int *endDate, const int &fitnessType)
@@ -90,15 +90,13 @@ double Hydrograph::printPredAndValid(const int *begDate, const int *endDate, con
 
 double Hydrograph::calibrate(const int *begDate, const int *endDate)
 {
-	if(!mMlcmSh->setFitnessBegEnd(begDate, endDate))
-		return -1;
+	mMlcmSh->setFitnessBegEnd(begDate, endDate);
 	return mCal->doCalibration();
 }
 
 double Hydrograph::validate(const int *begDate, const int *endDate)
 {
-	if(!mMlcmSh->setFitnessBegEnd(begDate, endDate))
-		return -1;
+	mMlcmSh->setFitnessBegEnd(begDate, endDate);
 	return mMlcmSh->getValFitness();
 }
 
@@ -120,8 +118,7 @@ void Hydrograph::getMaxAandZ(int *maxA, int *maxZ) const
 
 void Hydrograph::getBruteforceParams(int &steps, int &iter) const
 {
-	steps = 1;
-	iter = 1;
+	mCal->getBFParams(steps, iter);
 }
 
 void Hydrograph::getNMParams(double &stop, int &iter) const
@@ -161,14 +158,14 @@ void Hydrograph::readDeck(const double &format, const char *filename)
 	mMlcmSh->readDeck(format, filename);
 }
 
-bool Hydrograph::readPcp(const double &format, const char *filename)
+void Hydrograph::readPcp(const double &format, const char *filename)
 {
-	return mMlcmSh->readPcp(format, filename);
+	mMlcmSh->readPcp(format, filename);
 }
 
-bool Hydrograph::readDat(const double &format, const char *filename)
+void Hydrograph::readDat(const double &format, const char *filename)
 {
-	return mMlcmSh->readDat(format, filename);
+	mMlcmSh->readDat(format, filename);
 }
 
 int Hydrograph::click()

@@ -75,9 +75,11 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	mIsPcp = 0;
 	mInfo = new InfoDlg();
 	mH = new Hydrograph();
-	if (!loadConfig("default.config")) {
-		CString text = L"Что-то пошло не так :(";
-		mInfo->print(text);
+	try {
+		loadConfig("default.config");
+	}
+	catch (const int &a) {
+		printError(a);
 	}
 }
 
@@ -108,7 +110,7 @@ bool CMLCMDlg::doFileName(bool loadFile, CString &edit_str, char **charName)
 	return 1;
 }
 
-bool CMLCMDlg::loadConfig(char *configName)
+void CMLCMDlg::loadConfig(char *configName)
 {
 	ifstream confin(configName, ios::out);
 	confin >> mCalType >> mFitnType >> mValType;
@@ -153,12 +155,11 @@ bool CMLCMDlg::loadConfig(char *configName)
 	double minGrowth;
 	if (confin.ios::eof()) {
 		confin.close();
-		return 0;
+		throw(0);
 	}
 	confin >> minGrowth;
 	mH->setMinGrowth(minGrowth);
 	confin.close();
-	return 1;
 }
 
 void CMLCMDlg::saveConfig(char *configName)
@@ -199,6 +200,23 @@ void CMLCMDlg::saveConfig(char *configName)
 	confout << slsStep << " " << slsLim << " " << slsCalType << endl;
 	confout << mH->getMinGrowth();
 	confout.close();
+}
+
+void CMLCMDlg::printError(const int &a)
+{
+	CString text;
+	switch (a) {
+	case 0:
+		text = L"Что-то пошло не так :(";
+		break;
+	case 1:
+		text = L"Скорее всего границы калибровки заданы неверно";
+		break;
+	default:
+		text = L"Что-то пошло не так :(";
+		break;
+	}
+	mInfo->print(text);
 }
 
 void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
@@ -440,9 +458,11 @@ void CMLCMDlg::OnBnClickedLoadsett()
 {
 	char *loadSettChar;
 	if(doFileName(1, mLoadSett, &loadSettChar))
-		if(!loadConfig(loadSettChar)) {
-			CString text = L"Что-то пошло не так :(";
-			mInfo->print(text);
+		try {
+			loadConfig(loadSettChar);
+		}
+		catch (const int &a) {
+			printError(a);
 		}
 }
 
@@ -471,9 +491,11 @@ void CMLCMDlg::OnBnClickedLoadmlcm()
 	}
 	char *loadMlcmChar;
 	if (doFileName(1, mLoadMlcm, &loadMlcmChar)) {
-		if (!mH->loadMlcm(loadMlcmChar)) {
-			CString text = L"Что-то пошло не так :(";
-			mInfo->print(text);
+		try {
+			mH->loadMlcm(loadMlcmChar);
+		}
+		catch (const int &a) {
+			printError(a);
 		}
 	}
 }
@@ -536,16 +558,15 @@ void CMLCMDlg::OnBnClickedpcp()
 	char *pcpChar;
 	if (doFileName(1, mEditPcp, &pcpChar)) {
 		double pcpFormat = doComboFormats(mComboPcp);
-		if (!mH->readPcp(pcpFormat, pcpChar)) {
-			CString text = L"Что-то пошло не так :(";
-			mInfo->print(text);
-		}
-		else
+		try {
+			mH->readPcp(pcpFormat, pcpChar);
 			mIsPcp = 1;
+		}
+		catch (const int &a) {
+			printError(a);
+		}
 	}
 }
-
-
 
 void CMLCMDlg::OnBnClickeddat()
 {
@@ -557,9 +578,11 @@ void CMLCMDlg::OnBnClickeddat()
 	char *datChar;
 	if (doFileName(1, mEditDat, &datChar)) {
 		double datFormat = doComboFormats(mComboDat);
-		if (!mH->readDat(datFormat, datChar)) {
-			CString text = L"Что-то пошло не так :(";
-			mInfo->print(text);
+		try {
+			mH->readDat(datFormat, datChar);
+		}
+		catch (const int &a) {
+			printError(a);
 		}
 	}
 }
@@ -584,23 +607,23 @@ void CMLCMDlg::OnBnClickedCalibrate()
 	int *calBegin = doDate(mCalFrom);
 	int *calEnd = doDate(mCalTo);
 	mH->click();
-	double val = mH->calibrate(calBegin, calEnd);
-	if (val == -1) {
-		CString text = L"Скорее всего границы калибровки заданы неверно";
+	try {
+		double val = mH->calibrate(calBegin, calEnd);
+		int countOfClicks = mH->click();
+		val = mH->validate(calBegin, calEnd);
+		CString valStr;
+		valStr.Format(L"%f", val);
+		CString text = L"Калибрация выполнена. Валидация ";
+		text += valStr;
+		CString clicks;
+		clicks.Format(L"%i", countOfClicks);
+		text += L". Количество вызовов модели: ";
+		text += clicks;
 		mInfo->print(text);
-		return;
 	}
-	int countOfClicks = mH->click();
-	val = mH->validate(calBegin, calEnd);
-	CString valStr;
-	valStr.Format(L"%f", val);
-	CString text = L"Калибрация выполнена. Валидация ";
-	text += valStr;
-	CString clicks;
-	clicks.Format(L"%i", countOfClicks);
-	text += L". Количество вызовов модели: ";
-	text += clicks;
-	mInfo->print(text);
+	catch (const int &a) {
+		printError(a);
+	}
 }
 
 
@@ -613,17 +636,17 @@ void CMLCMDlg::OnBnClickedValidate()
 	}
 	int *valBegin = doDate(mValFrom);
 	int *valEnd = doDate(mValTo);
-	double val = mH->validate(valBegin, valEnd);
-	if (val == -1) {
-		CString text = L"Скорее всего границы калибровки заданы неверно";
+	try {
+		double val = mH->validate(valBegin, valEnd);
+		CString valStr;
+		valStr.Format(L"%f", val);
+		CString text = L"Значение валидации ";
+		text += valStr;
 		mInfo->print(text);
-		return;
 	}
-	CString valStr;
-	valStr.Format(L"%f", val);
-	CString text = L"Значение валидации ";
-	text += valStr;
-	mInfo->print(text);
+	catch (const int &a) {
+		printError(a);
+	}
 }
 
 
@@ -636,13 +659,13 @@ void CMLCMDlg::OnBnClickedModel()
 	}
 	int *modBegin = doDate(mModFrom);
 	int *modEnd = doDate(mModTo);
-	if (mH->printPrediction(modBegin, modEnd)) {
+	try {
+		mH->printPrediction(modBegin, modEnd);
 		CString text = L"Моделирование прошло успешно";
 		mInfo->print(text);
 	}
-	else {
-		CString text = L"Скорее всего границы моделирования заданы неверно";
-		mInfo->print(text);
+	catch (const int &a) {
+		printError(a);
 	}
 }
 
@@ -661,8 +684,8 @@ void CMLCMDlg::OnBnClickedModandval()
 	case 1: valType = 1; break;
 	case 2: valType = 4; break;
 	}
-	double val = mH->printPredAndValid(modBegin, modEnd, valType);
-	if (val != -1) {
+	try {
+		double val = mH->printPredAndValid(modBegin, modEnd, valType);
 		CString text = L"Моделирование прошло успешно. ";
 		CString valStr;
 		valStr.Format(L"%f", val);
@@ -670,9 +693,8 @@ void CMLCMDlg::OnBnClickedModandval()
 		text += valStr;
 		mInfo->print(text);
 	}
-	else {
-		CString text = L"Скорее всего границы моделирования заданы неверно";
-		mInfo->print(text);
+	catch (const int &a) {
+		printError(a);
 	}
 }
 

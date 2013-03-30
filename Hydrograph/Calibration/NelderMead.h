@@ -8,7 +8,7 @@ using namespace std;
 class NelderMead
 {
 public:
-	NelderMead(MlcmShell *modelSh);
+	explicit NelderMead(MlcmShell *modelSh);
 	double doCalibration(Element &nowElement);
 	double doComplexCalibration(const int &N, Element &nowElement);
 	void setKoeffs(const double &koeff1, const double &koeff2);

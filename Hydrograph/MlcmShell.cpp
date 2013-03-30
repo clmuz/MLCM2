@@ -65,12 +65,12 @@ void MlcmShell::setCLim(const double &c1, const double &c2)
 		Element::maxC = c2;
 }
 
-bool MlcmShell::printPrediction(const int *begDate, const int *endDate)
+void MlcmShell::printPrediction(const int *begDate, const int *endDate)
 {
 	int dayBeg = makeTheGap(begDate, mPcpBeg);
 	int dayEnd = makeTheGap(endDate, mPcpBeg);
 	if ((dayBeg < 1) || (dayEnd * mMeasPerDay > mP.size()))
-		return 0;
+		throw(1);
 	ofstream rout(mOutput, ios::out);
 	vector<double> res;
 	res = mModel->makeRunoff((--dayBeg) * mMeasPerDay, dayEnd * mMeasPerDay);
@@ -92,7 +92,6 @@ bool MlcmShell::printPrediction(const int *begDate, const int *endDate)
 		writeOutFormat(rout, nowDate, i, dayBeg * mMeasPerDay, res[i]);
 		rout << endl;
 	rout.close();
-	return 1;
 }
 
 double MlcmShell::printPrediction(const int *begDate, const int *endDate, const int &fitnessType)
@@ -103,7 +102,7 @@ double MlcmShell::printPrediction(const int *begDate, const int *endDate, const 
 		|| (--dayEnd * mMeasPerDay > mP.size())
 		|| (dayBeg - mGap < 0)
 		|| ((dayEnd - mGap - dayBeg + 1) * mMeasPerDay > mDat.size()))
-		return 0;
+		throw(1);
 	ofstream rout(mOutput, ios::out);
 	vector<double> res;
 	res = mModel->makeRunoff((--dayBeg) * mMeasPerDay, dayEnd * mMeasPerDay);
@@ -134,7 +133,7 @@ double MlcmShell::printPrediction(const int *begDate, const int *endDate, const 
 	return val;
 }
 
-bool MlcmShell::loadParametrs(const char *paramFile)
+void MlcmShell::loadParametrs(const char *paramFile)
 {
 	ifstream pin(paramFile, ios::in);
 	int N;
@@ -144,7 +143,7 @@ bool MlcmShell::loadParametrs(const char *paramFile)
 		pin >> t;
 	else {
 		pin.close();
-		return 0;
+		throw(1);
 	}
 	vector<double> Al(N), Z(N);
 	for (int i = 0; i < N - 1; i++)
@@ -155,13 +154,12 @@ bool MlcmShell::loadParametrs(const char *paramFile)
 			pin >> Z[N - 1];
 		else {
 			pin.close();
-			return 0;
+			throw(1);
 		}
 	}
 	Element nElement(N, a, c, k, e, t, Al, Z);
 	mModel->setParam(nElement);
 	pin.close();
-	return 1;
 }
 
 void MlcmShell::changeModelParametrs(const Element &element)
@@ -179,7 +177,7 @@ double MlcmShell::getValFitness() const
 	return mFitness->getValFitness();
 }
 
-bool MlcmShell::setFitnessBegEnd(const int *begDate, const int *endDate)
+void MlcmShell::setFitnessBegEnd(const int *begDate, const int *endDate)
 {
 	int begDay = makeTheGap(begDate, mPcpBeg);
 	int endDay = makeTheGap(endDate, mPcpBeg);
@@ -187,9 +185,8 @@ bool MlcmShell::setFitnessBegEnd(const int *begDate, const int *endDate)
 		|| (--endDay * mMeasPerDay > mP.size())
 		|| (begDay - mGap < 0)
 		|| ((endDay - mGap - begDay + 1) * mMeasPerDay > mDat.size()))
-		return 0;
+		throw(1);
 	mFitness->setBegEnd(begDay, endDay);
-	return 1;
 }
 
 void MlcmShell::printParams(const char *outputParamFile)
@@ -317,7 +314,7 @@ double MlcmShell::getRealData(const int &i) const
 	return mDat[i];
 }
 
-bool MlcmShell::readPcp(const double &format, const char *filename)
+void MlcmShell::readPcp(const double &format, const char *filename)
 {
 	mPcpFormat = format;
 	ifstream pcpIn (filename, ios::in);
@@ -339,7 +336,7 @@ bool MlcmShell::readPcp(const double &format, const char *filename)
 	if (ET[0] == -1) {
 		pcpIn.close();
 		mP.clear();
-		return 0;
+		throw(0);
 	}
 	int i = 0;
 	while (!pcpIn.ios::eof()) {
@@ -349,7 +346,7 @@ bool MlcmShell::readPcp(const double &format, const char *filename)
 		if (i == 1000000) {
 			pcpIn.close();
 			mP.clear();
-			return 0;
+			throw(0);
 		}
 	}
 	mModel->setPandET(&mP, &ET);
@@ -359,10 +356,9 @@ bool MlcmShell::readPcp(const double &format, const char *filename)
 		mFitness->setRealVal(&mDat, mGap);
 	}
 	pcpIn.close();
-	return 1;
 }
 
-bool MlcmShell::readDat(const double &format, const char *filename)
+void MlcmShell::readDat(const double &format, const char *filename)
 {
 	mDatFormat = format;
 	mOutFormat = 1.0 / format;
@@ -386,14 +382,13 @@ bool MlcmShell::readDat(const double &format, const char *filename)
 			datIn.close();
 			mDat.clear();
 			mDatBeg[0] = -1;
-			return 0;
+			throw(0);
 		}
 	}
 	datIn.close();
 	mGap = makeTheGap(mDatBeg, mPcpBeg);
 	mModel->setRealData(&mDat, --mGap * mMeasPerDay);
 	mFitness->setRealVal(&mDat, mGap);
-	return 1;
 }
 
 int MlcmShell::makeTheGap(const int *date1, const int *date2) const		//positive if date1 is after date2

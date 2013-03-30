@@ -9,14 +9,15 @@ Element::Element()
 
 Element::Element(const int &numLayers)
 {
+	mMin = 1e-2;
 	N = numLayers;
-	a = 0;
-	c = 0;
+	a = mMin;
+	c = minC;
 	k = 1;
 	e = 1;
 	t = 0;
-	vector<double> newA (N, 0);
-	vector<double> newZ (N, 0);
+	vector<double> newA (N, mMin);
+	vector<double> newZ (N, mMin);
 	Al = newA;
 	Z = newZ;
 }
@@ -105,6 +106,83 @@ Element Element::operator *(const double &con) const
 	return newElement;
 }
 
+void Element::plus(const double &koeff, const int &coord)
+{
+	if (coord >= 2 * N + 5)
+		return;
+	switch(coord) {
+	case 0:
+		a += maxA[0] * koeff;
+		return;
+	case 1:
+		c += (maxC - minC) * koeff;
+		return;
+	case 2:
+		k += 19 * koeff;
+		return;
+	case 3:
+		e += 4 * koeff;
+		return;
+	case 4:
+		t = 24 * koeff;
+		return;
+	default:
+		if (coord % 2 == 1) {
+			Al[(coord - 5) / 2] += maxA[(coord - 5) / 2 + 1] * koeff;
+		}
+		else {
+			Z[(coord - 6) / 2] += maxZ[(coord - 6) / 2] * koeff;
+		}
+		return;
+	}
+}
+
+void Element::setCoord(const double &koeff, const int &coord)
+{
+	if (coord >= 2 * N + 5)
+		return;
+	switch(coord) {
+	case 0:
+		a = mMin + maxA[0] * koeff;
+		return;
+	case 1:
+		c = minC + (maxC - minC) * koeff;
+		return;
+	case 2:
+		k = 1 + 19 * koeff;
+		return;
+	case 3:
+		e = 1 + 4 * koeff;
+		return;
+	case 4:
+		t = 24 * koeff;
+		return;
+	default:
+		if (coord % 2 == 1) {
+			Al[(coord - 5) / 2] = mMin + maxA[(coord - 5) / 2 + 1] * koeff;
+		}
+		else {
+			Z[(coord - 6) / 2] = mMin + maxZ[(coord - 6) / 2] * koeff;
+		}
+		return;
+	}
+}
+
+double* Element::toKoeffs() const
+{
+	double *koeffs = new double [2 * N + 5];
+	koeffs[0] = a / maxA[0];
+	koeffs[1] = (c - minC) / (maxC - minC);
+	koeffs[2] = (k - 1) / 19.0;
+	koeffs[3] = (e - 1) / 4.0;
+	koeffs[4] = t / 24.0;
+	for (int i = 0; i < N; i++) {
+		koeffs[2 * N + 5] = Al[i] / maxA[i + 1];
+		koeffs[2 * N + 6] = Al[i] / maxZ[i];
+	}
+	return koeffs;
+}
+
 int Element::getN() const
 {
 	return N;
@@ -147,7 +225,7 @@ vector<double> Element::getZ() const
 
 bool Element::checkPos() const
 {
-	if ((a < 0) || (a > maxA[0]))
+	if ((a <= 0) || (a > maxA[0]))
 		return 0;
 	if ((c < minC) || (c > maxC))
 		return 0;
@@ -158,18 +236,18 @@ bool Element::checkPos() const
 	if ((t < 0) || (t > 24))
 		return 0;
 	for (int i = 0; i < N; i++) {
-		if ((Al[i] < 0) || (Al[i] > maxA[i + 1]))
+		if ((Al[i] <= 0) || (Al[i] > maxA[i + 1]))
 			return 0;
-		if ((Z[i] < 0) || (Z[i] > maxZ[i]))
+		if ((Z[i] <= 0) || (Z[i] > maxZ[i]))
 			return 0;
 	}
 	return 1;
 }
 
-void Element::setLimits(double *mA, double *mZ)
+void Element::setLimits(double *newMaxA, double *newMaxZ)
 {
 	for (int i = 0; i < 11; i++)
-		maxA[i] = mA[i];
+		maxA[i] = newMaxA[i];
 	for (int i = 0; i < 10; i++)
-		maxZ[i] = mZ[i];
+		maxZ[i] = newMaxZ[i];
 }

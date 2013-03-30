@@ -24,11 +24,12 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);	// поддержка DDX/DDV
 
 private:
-	bool loadConfig(char *configName);
+	void loadConfig(char *configName);
 	void saveConfig(char *configName);
 	bool doFileName(bool loadFile, CString &edit_str, char **charName);
 	double doComboFormats(const CString &combo);
 	int *doDate(const COleDateTime &date);
+	void printError(const int &a);
 	Hydrograph *mH;
 	InfoDlg *mInfo;
 	bool mIsDeck, mIsOutfile, mIsPcp;

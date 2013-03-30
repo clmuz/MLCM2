@@ -7,7 +7,7 @@ using namespace std;
 class Msof
 {
 public:
-	Msof(Mlcm *model);
+	explicit Msof(Mlcm *model);
 	void setBegEnd(const int &begDay, const int &endDay);
 	double countError() const;
 	double countError(const vector<double> &modVal) const;

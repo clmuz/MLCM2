@@ -14,15 +14,15 @@ public:
 	void setDefFitnessType(const int &defFitnType);
 	void setValType(const int &valType);
 	void setInOutFormat(const int &inFormat, const int &outFormat);
-	bool printPrediction(const int *begDate, const int *endDate);
+	void printPrediction(const int *begDate, const int *endDate);
 	double printPrediction(const int *begDate, const int *endDate, const int &fitnessType);
-	bool loadParametrs(const char *paramFile);
+	void loadParametrs(const char *paramFile);
 	void changeModelParametrs(const Element &element);
 	void setMaxAandZ(const int *newMaxA, const int *newMaxZ);
 	void setCLim(const double &c1, const double &c2);
 	double getFitness() const;
 	double getValFitness() const;
-	bool setFitnessBegEnd(const int *begDate, const int *endDate);
+	void setFitnessBegEnd(const int *begDate, const int *endDate);
 	void printParams(const char *outputParamFile);
 	Element getParams() const;
 	void getFitnessTypes(int &defType, int &valType) const;
@@ -31,8 +31,8 @@ public:
 	void getCLim(double &c1, double &c2) const;
 	void setOutFile(char *outFileName);
 	void readDeck(const double &format, const char *filename);
-	bool readPcp(const double &format, const char *filename);
-	bool readDat(const double &format, const char *filename);
+	void readPcp(const double &format, const char *filename);
+	void readDat(const double &format, const char *filename);
 	int click();
 private:
 	double makeET(const int &month);

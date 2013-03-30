@@ -7,7 +7,7 @@ class Element
 {
 public:
 	Element();
-	Element(const int &numLayers);
+	explicit Element(const int &numLayers);
 	Element(const int &numLayers
 			 , const double &alpha0
 			 , const double &C
@@ -21,13 +21,16 @@ public:
 	void	operator+=(const Element &oth);
 	void	operator*=(const double &con);
 	Element operator* (const double &con) const;
+	void plus(const double &koeff, const int &coord);
+	void setCoord(const double &koeff, const int &coord);
+	double* toKoeffs() const;
 	int    getN() const;
 	double getAlpha0() const;
 	double getK() const;
 	double getEtta() const;
 	double getT() const;
 	double getC() const;
-	void setLimits(double *mA, double *mZ);
+	void setLimits(double *newMaxA, double *newMaxZ);
 	vector<double> getAlphas() const;
 	vector<double> getZ() const;
 	bool checkPos() const;
@@ -36,4 +39,6 @@ protected:
 	int N;
 	double a, c, k, e, t;
 	vector<double> Al, Z;
+private:
+	double mMin;
 };

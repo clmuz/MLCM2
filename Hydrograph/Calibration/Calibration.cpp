@@ -6,22 +6,17 @@ Calibration::Calibration(const int &calibrationType, MlcmShell *MlcmSh)
 	mCalType = calibrationType;
 	mMlcmSh = MlcmSh;
 	mMinGrowth = 0.1;
-	switch (mCalType) {
-	case 1:
-		mNM = new NelderMead (mMlcmSh);
-		break;
-	case 2:
-		mNM = new NelderMead (mMlcmSh);
-		break;
-	default:
-		break;
-	}
+	mNM = new NelderMead(mMlcmSh);
+	mBF = new BruteForce(mMlcmSh);
 }
 
 Calibration::Calibration(MlcmShell *MlcmSh)
 {
 	mMlcmSh = MlcmSh;
-	mCalType = -1;
+	mCalType = 0;
+	mMinGrowth = 0.1;
+	mNM = new NelderMead(mMlcmSh);
+	mBF = new BruteForce(mMlcmSh);
 }
 
 Calibration::~Calibration()
@@ -32,22 +27,6 @@ Calibration::~Calibration()
 
 void Calibration::setCalibrationType(const int &calType)
 {
-	if (mCalType == calType)
-		return;
-	switch (calType) {
-	case 1:
-		if (mCalType == 2)
-			break;
-		delete mNM;
-		mNM = new NelderMead (mMlcmSh);
-		break;
-	case 2:
-		if (mCalType == 1)
-			break;
-		delete mNM;
-		mNM = new NelderMead (mMlcmSh);
-		break;
-	}
 	mCalType = calType;
 }
 
@@ -64,6 +43,16 @@ void Calibration::setNMKoeffs(const std::vector<double> &koeffs)
 void Calibration::setMinGrowth(const double &minGrowth)
 {
 	mMinGrowth = minGrowth;
+}
+
+void Calibration::setBFParams(const int &stepsNum, const int &iterNum)
+{
+	mBF->setBFParams(stepsNum, iterNum);
+}
+
+void Calibration::getBFParams(int &stepsNum, int &iterNum) const
+{
+	mBF->getBFParams(stepsNum, iterNum);
 }
 
 double Calibration::doCalibration()
@@ -99,6 +88,8 @@ double Calibration::doCalStep(const int &N, Element &nowElement)
 		return mNM->doCalibration(nowElement);
 	case 2:
 		return mNM->doComplexCalibration(N, nowElement);
+	case 4:
+		return mBF->calibrateLayer(N, nowElement);
 	}
 	return -1;
 }

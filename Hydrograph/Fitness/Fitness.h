@@ -6,7 +6,7 @@
 class Fitness
 {
 public:
-	Fitness(Mlcm *model);
+	explicit Fitness(Mlcm *model);
 	~Fitness();
 	void createFitnessFunction(const int &fitnessType);
 	void setDefFitnessType(const int &fitnessType);

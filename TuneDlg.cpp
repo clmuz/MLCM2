@@ -59,6 +59,9 @@ void TuneDlg::setCalAndVal(const int &calType, const int &fitnType, const int &v
 	case 2:
 		mCalType = 1;
 		break;
+	case 4:
+		mCalType = 3;
+		break;
 	default:
 		mCalType = 0;
 		break;
@@ -98,6 +101,9 @@ void TuneDlg::getCalAndVal(int &calType, int &fitnType, int &valType)
 		break;
 	case 2:
 		calType = 1;
+		break;
+	case 3:
+		calType = 4;
 		break;
 	}
 	switch (mFitnType) {
@@ -260,6 +266,9 @@ void TuneDlg::setCalAndVal()
 	case 2:
 		mH->setCalibrationType(1); //TODO
 		break;
+	case 3:
+		mH->setCalibrationType(4);
+		break;
 	}
 	int fitn, val;
 	switch (mFitnType) {
@@ -307,7 +316,8 @@ void TuneDlg::OnBnClickedOk()
 	setCalAndVal();
 	if ((mMinC != 0) && (mMaxC != 0))
 		mH->setCLim(mMinC, mMaxC);
-	mH->setBruteforceParams(mBFStepsNum, mBFItNum);
+	if ((mBFStepsNum != 0) && (mBFItNum != 0))
+		mH->setBruteforceParams(mBFStepsNum, mBFItNum);
 	if (mMinGrowth != 0)
 		mH->setMinGrowth(mMinGrowth);
 	setNMKoeffs();

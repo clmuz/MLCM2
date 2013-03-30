@@ -7,9 +7,9 @@ class Hydrograph
 public:
 	Hydrograph();
 	~Hydrograph();
-	bool loadMlcm(const char *paramFile);
+	void loadMlcm(const char *paramFile);
 	void printMlcm(const char *outputParamFile);
-	bool printPrediction(const int *begDate, const int *endDate);
+	void printPrediction(const int *begDate, const int *endDate);
 	double printPredAndValid(const int *begDate, const int *endDate, const int &fitnessType = -1);
 	double calibrate(const int *begDate, const int *endDate);
 	double validate(const int *begDate, const int *endDate);
@@ -35,8 +35,8 @@ public:
 	void getCLim(double &c1, double &c2) const;
 	void setOutFile(char *outFileName);
 	void readDeck(const double &format, const char *filename);
-	bool readPcp(const double &format, const char *filename);
-	bool readDat(const double &format, const char *filename);
+	void readPcp(const double &format, const char *filename);
+	void readDat(const double &format, const char *filename);
 	int click();
 private:
 	MlcmShell *mMlcmSh;

@@ -5,7 +5,7 @@
 class AbsoluteSquareError
 {
 public:
-	AbsoluteSquareError(Mlcm *model);
+	explicit AbsoluteSquareError(Mlcm *model);
 	double countError() const;
 	double countError(const vector<double> &modVal) const;
 	void setBegEnd(const int &begDay, const int &endDay);

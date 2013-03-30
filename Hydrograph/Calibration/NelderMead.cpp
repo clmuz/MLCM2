@@ -10,7 +10,7 @@ NelderMead::NelderMead(MlcmShell *modelSh)
 	mBetta = 0.5;
 	mGamma = 2;
 	mN = 0;
-	mMax = 1000000000;
+	mMax = 1e15;
 	mE = 0.1;
 	mLimit = 1000;
 	mComplexNum = 1;
@@ -165,7 +165,7 @@ void NelderMead::doFirstSimplex(const double &koeff1, const double &koeff2)
 {
 	mElements.clear();
 	int i;
-	double a0 = Element::maxA[0], k = 20, minC = Element::minC, c = Element::maxC - minC, e = 4, t = 24;
+	double a0 = Element::maxA[0], k = 19, minC = Element::minC, c = Element::maxC - minC, e = 4, t = 24;
 	vector<double> A, Z, A1, Z1;
 	for (i = 0; i < mN; i++) {
 		A1.push_back(Element::maxA[i + 1]);
@@ -173,25 +173,25 @@ void NelderMead::doFirstSimplex(const double &koeff1, const double &koeff2)
 		A.push_back(A1.back() * koeff1);
 		Z.push_back(Z1.back() * koeff1);
 	}
-	Element nE0 (mN, a0 * koeff1, minC + c * koeff1, k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
+	Element nE0 (mN, a0 * koeff1, minC + c * koeff1, 1 + k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
 	mElements.push_back(nE0);
-	Element nE1 (mN, a0 * koeff2, minC + c * koeff1, k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
+	Element nE1 (mN, a0 * koeff2, minC + c * koeff1, 1 + k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
 	mElements.push_back(nE1);
-	Element nE2 (mN, a0 * koeff1, minC + c * koeff2, k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
+	Element nE2 (mN, a0 * koeff1, minC + c * koeff2, 1 + k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
 	mElements.push_back(nE2);
-	Element nE3 (mN, a0 * koeff1, minC + c * koeff1, k * koeff2, 1 + e * koeff1, t * koeff1, A, Z);
+	Element nE3 (mN, a0 * koeff1, minC + c * koeff1, 1 + k * koeff2, 1 + e * koeff1, t * koeff1, A, Z);
 	mElements.push_back(nE3);
-	Element nE4 (mN, a0 * koeff1, minC + c * koeff1, k * koeff1, 1 + e * koeff2, t * koeff1, A, Z);
+	Element nE4 (mN, a0 * koeff1, minC + c * koeff1, 1 + k * koeff1, 1 + e * koeff2, t * koeff1, A, Z);
 	mElements.push_back(nE4);
-	Element nE5 (mN, a0 * koeff1, minC + c * koeff1, k * koeff1, 1 + e * koeff1, t * koeff2, A, Z);
+	Element nE5 (mN, a0 * koeff1, minC + c * koeff1, 1 + k * koeff1, 1 + e * koeff1, t * koeff2, A, Z);
 	mElements.push_back(nE5);
 	for (i = 0; i < mN; i++) {
 		A[i] = A1[i] * koeff2;
-		Element nEl (mN, a0 * koeff1, minC + c * koeff1, k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
+		Element nEl (mN, a0 * koeff1, minC + c * koeff1, 1 + k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
 		mElements.push_back(nEl);
 		A[i] = A1[i] * koeff1;
 		Z[i] = Z1[i] * koeff2;
-		Element nEl1 (mN, a0 * koeff1, minC + c * koeff1, k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
+		Element nEl1 (mN, a0 * koeff1, minC + c * koeff1, 1 + k * koeff1, 1 + e * koeff1, t * koeff1, A, Z);
 		mElements.push_back(nEl1);
 		Z[i] = Z1[i] * koeff1;
 	}
