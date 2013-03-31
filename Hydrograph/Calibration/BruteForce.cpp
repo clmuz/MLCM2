@@ -12,8 +12,10 @@ BruteForce::BruteForce(MlcmShell *modelSh)
 
 void BruteForce::setBFParams(const int &stepsNum, const int &iterNum)
 {
-	mStepsNum = stepsNum;
-	mIterNum = iterNum;
+	if (stepsNum >= 0)
+		mStepsNum = stepsNum;
+	if (iterNum > 0)
+		mIterNum = iterNum;
 }
 
 void BruteForce::getBFParams(int &stepsNum, int &iterNum) const

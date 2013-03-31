@@ -64,7 +64,6 @@ private:
 	CString mSaveMlcm;
 	CString mLoadMlcm;
 	int mComboModAndVal;
-	int mCalType, mFitnType, mValType;
 public:
 	afx_msg void OnBnClickedTune();
 	afx_msg void OnBnClickedMaininfo();
@@ -89,4 +88,7 @@ public:
 	afx_msg void OnBnClickedModandval();
 	afx_msg void OnCbnSelchangeInformat();
 	afx_msg void OnCbnSelchangeOutformat();
+private:
+	COleDateTime mModValFrom;
+	COleDateTime mModValTo;
 };

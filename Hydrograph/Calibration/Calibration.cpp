@@ -109,7 +109,7 @@ int Calibration::getNMKoeffs(std::vector<double> &koeffs) const
 	return mNM->getNMKoeffs(koeffs);
 }
 
-int Calibration::getMinGrowth() const
+double Calibration::getMinGrowth() const
 {
 	return mMinGrowth;
 }

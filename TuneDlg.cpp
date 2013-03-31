@@ -48,20 +48,16 @@ TuneDlg::~TuneDlg()
 void TuneDlg::setHydrograph(Hydrograph *H)
 {
 	mH = H;
-}
-
-void TuneDlg::setCalAndVal(const int &calType, const int &fitnType, const int &valType)
-{
-	mCalType = calType;
-	mFitnType = fitnType;
-	mValType = valType;
-}
-
-void TuneDlg::getCalAndVal(int &calType, int &fitnType, int &valType) const
-{
-	calType = mCalType;
-	fitnType = mFitnType;
-	valType = mValType;
+	mH->getCalAndFitnessTypes(mCalType, mFitnType, mValType);
+	mH->getMaxAandZ(mMaxA, mMaxZ);
+	mH->getCLim(mMinC, mMaxC);
+	mH->getBruteforceParams(mBFStepsNum, mBFItNum);
+	mMinGrowth = mH->getMinGrowth();
+	vector<double> koeffs;
+	mH->getNMKoeffs(koeffs);
+	mNMKoeff1 = koeffs[0];
+	mNMKoeff2 = koeffs[1];
+	mH->getNMParams(mNMStop, mNMLim);
 }
 
 void TuneDlg::DoDataExchange(CDataExchange* pDX)
@@ -177,16 +173,16 @@ void TuneDlg::saveMaxAandZ()
 {
 	int *maxA = new int [11];
 	int *maxZ = new int [10];
-	if (mMaxA[0] != 0)
+	if ((mMaxA[0] > 0) && (mMaxA[0] < 1e6))
 		maxA[0] = mMaxA[0];
 	else
 		maxA[0] = -1;
 	for (int i = 0; i < 10; i++) {
-		if (mMaxA[i + 1] != 0)
+		if ((mMaxA[i + 1] > 0) && (mMaxA[i + 1] < 1e6))
 			maxA[i + 1] = mMaxA[i + 1];
 		else
 			maxA[i + 1] = -1;
-		if (mMaxZ[i] != 0)
+		if ((mMaxZ[i] > 0) && (mMaxZ[i] < 1e5))
 			maxZ[i] = mMaxZ[i];
 		else
 			maxZ[i] = -1;
@@ -226,16 +222,11 @@ void TuneDlg::OnBnClickedOk()
 	UpdateData(1);
 	saveMaxAandZ();
 	setCalAndVal();
-	if ((mMinC != 0) && (mMaxC != 0))
-		mH->setCLim(mMinC, mMaxC);
-	if ((mBFStepsNum != 0) && (mBFItNum != 0))
-		mH->setBruteforceParams(mBFStepsNum, mBFItNum);
-	if (mMinGrowth != 0)
-		mH->setMinGrowth(mMinGrowth);
+	mH->setCLim(mMinC, mMaxC);
+	mH->setBruteforceParams(mBFStepsNum, mBFItNum);
+	mH->setMinGrowth(mMinGrowth);
 	setNMKoeffs();
-	if ((mNMStop != 0) && (mNMLim != 0))
-		mH->setNMStopAndLim(mNMStop, mNMLim);
-	if ((mSlsStep != 0) && (mSlsLim != 0))
-		mH->setSlsParam(mSlsStep, mSlsLim, mSls0);
+	mH->setNMStopAndLim(mNMStop, mNMLim);
+	mH->setSlsParam(mSlsStep, mSlsLim, mSls0);
 	CDialogEx::OnOK();
 }

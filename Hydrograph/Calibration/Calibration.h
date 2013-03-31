@@ -20,7 +20,7 @@ public:
 	int getCalType() const;
 	void getNMParams(double &stop, int &iter) const;
 	int getNMKoeffs(std::vector<double> &koeffs) const;
-	int getMinGrowth() const;
+	double getMinGrowth() const;
 	void getBFParams(int &stepsNum, int &iterNum) const;
 private:
 	double doCalStep(const int &N, Element &bestElement);

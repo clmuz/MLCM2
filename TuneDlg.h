@@ -12,8 +12,6 @@ public:
 	TuneDlg(CWnd* pParent = NULL);   // стандартный конструктор
 	virtual ~TuneDlg();
 	void setHydrograph(Hydrograph *H);
-	void setCalAndVal(const int &calType, const int &fitnType, const int &valType);
-	void getCalAndVal(int &calType, int &fitnType, int &valType) const;
 
 // Данные диалогового окна
 	enum { IDD = TuneModelDialog };
@@ -37,7 +35,7 @@ private:
 	int mBFStepsNum;
 	int mBFItNum;
 	CString mNMLoad;
-	float mNMStop;
+	double mNMStop;
 	int mNMLim;
 	int mSlsLim;
 	double mSlsStep;

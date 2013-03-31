@@ -23,8 +23,10 @@ NelderMead::NelderMead(MlcmShell *modelSh)
 
 void NelderMead::setNMStopAndLim(const double &NMStop, const int &NMLim)
 {
-	mE = NMStop;
-	mLimit = NMLim;
+	if (mE > 0)
+		mE = NMStop;
+	if (mLimit > 0)
+		mLimit = NMLim;
 }
 
 double NelderMead::doCalibration(Element &nowElement)

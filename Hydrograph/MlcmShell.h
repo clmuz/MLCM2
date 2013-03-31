@@ -40,6 +40,7 @@ private:
 	int makeTheGap(const int *date1, const int *date2) const;
 	int giveDaysInMonth(const int &month, const int &year) const;
 	void readInFormat(ifstream &fin, int &code, int &month, int &day, double &value) const;
+	void readAndCheckFormat(ifstream &fin, int &code, int &month, int &day, double &value) const;
 	void writeOutFormat(ofstream &fout, const int *date, const int &i, const int &begPoint, const double &value) const;
 	double getRealData(const int &i) const;
 	void incDate(int *date) const;

@@ -31,7 +31,7 @@ public:
 	int getNMKoeffs(std::vector<double> &koeffs) const;
 	void getSlsParams(double &slsStep, int &slsLim, int &slsCalType) const;
 	void setSlsParam(const double &slsStep, const int &slsLim, const int &slsCalType);
-	int getMinGrowth() const;
+	double getMinGrowth() const;
 	void getCLim(double &c1, double &c2) const;
 	void setOutFile(char *outFileName);
 	void readDeck(const double &format, const char *filename);

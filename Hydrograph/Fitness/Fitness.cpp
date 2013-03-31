@@ -160,10 +160,10 @@ void Fitness::setRealVal(vector<double> *realDat, const int &gap)
 	for (int i = 0; i < mMaxClassesNum; i++) {
 		if (mCreatedClasses[i]) {
 			switch (i) {
-			case 1:
+			case 0:
 				mMsof->setRealVal(realDat, gap);
 				break;
-			case 4:
+			case 1:
 				mAse->setRealVal(realDat, gap);
 				break;
 			}

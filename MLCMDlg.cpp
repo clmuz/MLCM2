@@ -68,6 +68,8 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	, mSaveMlcm(_T(""))
 	, mLoadMlcm(_T(""))
 	, mComboModAndVal(0)
+	, mModValFrom(COleDateTime::GetCurrentTime())
+	, mModValTo(COleDateTime::GetCurrentTime())
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	mIsDeck = 0;
@@ -113,9 +115,10 @@ bool CMLCMDlg::doFileName(bool loadFile, CString &edit_str, char **charName)
 void CMLCMDlg::loadConfig(char *configName)
 {
 	ifstream confin(configName, ios::out);
-	confin >> mCalType >> mFitnType >> mValType;
-	mH->setCalibrationType(mCalType);
-	mH->setFitnessType(mFitnType, mValType);
+	int calType, fitnType, valType;
+	confin >> calType >> fitnType >> valType;
+	mH->setCalibrationType(calType);
+	mH->setFitnessType(fitnType, valType);
 	int inFormat, outFormat;
 	confin >> inFormat >> outFormat;
 	mH->setInOutFormat(inFormat, outFormat);
@@ -212,6 +215,9 @@ void CMLCMDlg::printError(const int &a)
 	case 1:
 		text = L"Скорее всего границы калибровки заданы неверно";
 		break;
+	case 2:
+		text = L"Неправильный формат входного файла";
+		break;
 	default:
 		text = L"Что-то пошло не так :(";
 		break;
@@ -244,6 +250,8 @@ void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, Edit_SaveMlcm, mSaveMlcm);
 	DDX_Text(pDX, Edit_LoadMlcm, mLoadMlcm);
 	DDX_CBIndex(pDX, Combo_ModAndVal, mComboModAndVal);
+	DDX_DateTimeCtrl(pDX, Date_ModValFrom, mModValFrom);
+	DDX_DateTimeCtrl(pDX, Date_ModValTo, mModValTo);
 }
 
 BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
@@ -365,9 +373,7 @@ void CMLCMDlg::OnBnClickedTune()
 {
 	TuneDlg *T = new TuneDlg();
 	T->setHydrograph(mH);
-	T->setCalAndVal(mCalType, mFitnType, mValType);
 	T->DoModal();
-	T->getCalAndVal(mCalType, mFitnType, mValType);
 	delete T;
 }
 
@@ -676,11 +682,10 @@ void CMLCMDlg::OnBnClickedModandval()
 		mInfo->print(text);
 		return;
 	}
-	int *modBegin = doDate(mModFrom);
-	int *modEnd = doDate(mModTo);
-	int valType;
+	int *modValBegin = doDate(mModValFrom);
+	int *modValEnd = doDate(mModValTo);
 	try {
-		double val = mH->printPredAndValid(modBegin, modEnd, mComboModAndVal);
+		double val = mH->printPredAndValid(modValBegin, modValEnd, mComboModAndVal - 1);
 		CString text = L"Моделирование прошло успешно. ";
 		CString valStr;
 		valStr.Format(L"%f", val);

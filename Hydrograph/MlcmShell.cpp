@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include <fstream>
+#include <sstream>
+#include <string>
 #include "MlcmShell.h"
 
 using namespace std;
@@ -105,7 +107,7 @@ double MlcmShell::printPrediction(const int *begDate, const int *endDate, const 
 		throw(1);
 	ofstream rout(mOutput, ios::out);
 	vector<double> res;
-	res = mModel->makeRunoff((--dayBeg) * mMeasPerDay, dayEnd * mMeasPerDay);
+	res = mModel->makeRunoff(dayBeg * mMeasPerDay, (dayEnd + 1) * mMeasPerDay);
 	rout.setf(ios::fixed, ios::floatfield);
 	rout.precision(3);
 	double val;
@@ -245,7 +247,7 @@ void MlcmShell::setOutFile(char *outFileName)
 double MlcmShell::makeET(const int &month)
 {
 	if ((month < 0) || (month > 11))
-		return -1;
+		throw(0);
 	return mET[month - 1];
 }
 
@@ -287,6 +289,48 @@ void MlcmShell::readInFormat(ifstream &fin, int &code, int &month, int &day, dou
 	}
 }
 
+void MlcmShell::readAndCheckFormat(ifstream &fin, int &code, int &month, int &day, double &value) const
+{
+	string line;
+	getline(fin, line);
+	stringstream linestream(line);
+	switch (mInfileFormat) {
+	case 1:
+		if (linestream >> code >> month >> day >> value)
+			return;
+		else {
+			fin.close();
+			throw(2);
+		}
+	case 2:
+		if (linestream >> code >> month >> day >> value)
+			throw(2);
+		linestream.str(line);
+		if (linestream >> month >> day >> value) {
+			code = 0;
+			return;
+		}
+		else {
+			fin.close();
+			throw(2);
+		}
+	case 3:
+		if (linestream >> month >> value) {
+			fin.close();
+			throw(2);
+		}
+		linestream.str(line);
+		if (!(linestream >> value)) {
+			fin.close();
+			throw(2);
+		}
+		code = 0;
+		month = 113;
+		day = 1;
+		return;
+	}
+}
+
 void MlcmShell::writeOutFormat(ofstream &fout, const int *date, const int &i, const int &begPoint, const double &value) const
 {
 	int nMonth = date[1] * 100 + date[2] % 100;
@@ -321,29 +365,24 @@ void MlcmShell::readPcp(const double &format, const char *filename)
 	vector<double> ET;
 	int code, month, day;
 	double tmp;
-	readInFormat(pcpIn, code, month, day, tmp);
+	readAndCheckFormat(pcpIn, code, month, day, tmp);
 	mCode = code;
 	mPcpBeg[0] = day;
 	mPcpBeg[1] = month / 100;
 	mPcpBeg[2] = month % 100;
-	if (mPcpBeg[2] > 50)
+	if (mPcpBeg[2] > 25)
 		mPcpBeg[2] += 1900;
 	else
 		mPcpBeg[2] += 2000;
 	mP.clear();
 	mP.push_back(tmp * mPcpFormat);
 	ET.push_back(makeET(month / 100));
-	if (ET[0] == -1) {
-		pcpIn.close();
-		mP.clear();
-		throw(0);
-	}
 	int i = 0;
 	while (!pcpIn.ios::eof()) {
 		readInFormat(pcpIn, code, month, day, tmp);
 		mP.push_back(tmp * mPcpFormat);
 		ET.push_back(makeET(month / 100));
-		if (i == 1000000) {
+		if (i++ == 1000000) {
 			pcpIn.close();
 			mP.clear();
 			throw(0);
@@ -365,20 +404,21 @@ void MlcmShell::readDat(const double &format, const char *filename)
 	ifstream datIn (filename, ios::in);
 	int code, month, day;
 	double tmp;
-	readInFormat(datIn, code, month, day, tmp);
+	readAndCheckFormat(datIn, code, month, day, tmp);
 	mDat.clear();
 	mDatBeg[0] = day;
 	mDatBeg[1] = month / 100;
 	mDatBeg[2] = month % 100;
-	if (mDatBeg[2] > 50)
+	if (mDatBeg[2] > 25)
 		mDatBeg[2] += 1900;
 	else
 		mDatBeg[2] += 2000;
 	int i = 0;
+	mDat.push_back(tmp * mDatFormat);
 	while (!datIn.ios::eof()) {
 		readInFormat(datIn, code, month, day, tmp);
 		mDat.push_back(tmp * mDatFormat);
-		if (i == 1000000) {
+		if (i++ == 1000000) {
 			datIn.close();
 			mDat.clear();
 			mDatBeg[0] = -1;

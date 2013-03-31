@@ -85,6 +85,7 @@ void Hydrograph::printPrediction(const int *begDate, const int *endDate)
 
 double Hydrograph::printPredAndValid(const int *begDate, const int *endDate, const int &fitnessType)
 {
+	mMlcmSh->setFitnessBegEnd(begDate, endDate);
 	return mMlcmSh->printPrediction(begDate, endDate, fitnessType);
 }
 
@@ -143,7 +144,7 @@ void Hydrograph::setSlsParam(const double &slsStep, const int &slsLim, const int
 
 }
 
-int Hydrograph::getMinGrowth() const
+double Hydrograph::getMinGrowth() const
 {
 	return mCal->getMinGrowth();
 }
