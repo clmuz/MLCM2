@@ -395,8 +395,8 @@ void CMLCMDlg::OnBnClickedConfiginfo()
 {
 	CString text = L"Информация по .config файлу\n\n(если функция ошибки уменьшается недостаточно быстро - калибровка завершается)";
 	text += L"Данные по умолчанию хранятся в default.config\n";
-	text += L"Через пробелы три значения - используемая калибровка (1 - Нелдер-Мид, 2 - расширенный Нелдер-Мид, 3 - SLS), ";
-	text += L"используемая целевая функция и функция для валидации (и для того, и для другого 1 - MSOF, 4 - среднеквадратическая ошибка)\n";
+	text += L"Через пробелы три значения - используемая калибровка (0 - Нелдер-Мид, 1 - расширенный Нелдер-Мид, 2 - SLS, 3 - перебор), ";
+	text += L"используемая целевая функция и функция для валидации (и для того, и для другого 0 - MSOF, 1 - среднеквадратическая ошибка)\n";
 	text += L"Форматы входных и выходных файлов через пробел (справку для форматов можете посмотреть в информации для входных и выходных файлов)\n";
 	text += L"Ограничение на скорость трансформации паводочной волны, через пробел, сверху и снизу (0-1)\n";
 	text += L"Данные об ограничениях на слои - первая строка ограничение на скорость поверхностного стекания (в мм/ч), ";
@@ -679,13 +679,8 @@ void CMLCMDlg::OnBnClickedModandval()
 	int *modBegin = doDate(mModFrom);
 	int *modEnd = doDate(mModTo);
 	int valType;
-	switch (mComboModAndVal) {
-	case 0: valType = -1; break;
-	case 1: valType = 1; break;
-	case 2: valType = 4; break;
-	}
 	try {
-		double val = mH->printPredAndValid(modBegin, modEnd, valType);
+		double val = mH->printPredAndValid(modBegin, modEnd, mComboModAndVal);
 		CString text = L"Моделирование прошло успешно. ";
 		CString valStr;
 		valStr.Format(L"%f", val);

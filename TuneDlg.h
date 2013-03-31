@@ -13,7 +13,7 @@ public:
 	virtual ~TuneDlg();
 	void setHydrograph(Hydrograph *H);
 	void setCalAndVal(const int &calType, const int &fitnType, const int &valType);
-	void getCalAndVal(int &calType, int &fitnType, int &valType);
+	void getCalAndVal(int &calType, int &fitnType, int &valType) const;
 
 // Данные диалогового окна
 	enum { IDD = TuneModelDialog };

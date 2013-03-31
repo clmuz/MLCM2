@@ -52,76 +52,16 @@ void TuneDlg::setHydrograph(Hydrograph *H)
 
 void TuneDlg::setCalAndVal(const int &calType, const int &fitnType, const int &valType)
 {
-	switch (calType) {
-	case 1:
-		mCalType = 0;
-		break;
-	case 2:
-		mCalType = 1;
-		break;
-	case 4:
-		mCalType = 3;
-		break;
-	default:
-		mCalType = 0;
-		break;
-	}
-	switch (fitnType) {
-	case 1:
-		mFitnType = 0;
-		break;
-	case 4:
-		mFitnType = 1;
-		break;
-	default:
-		mFitnType = 0;
-		break;
-	}
-	switch (valType) {
-	case 1:
-		mValType = 0;
-		break;
-	case 4:
-		mValType = 1;
-		break;
-	default:
-		mValType = 0;
-		break;
-	}
+	mCalType = calType;
+	mFitnType = fitnType;
+	mValType = valType;
 }
 
-void TuneDlg::getCalAndVal(int &calType, int &fitnType, int &valType)
+void TuneDlg::getCalAndVal(int &calType, int &fitnType, int &valType) const
 {
-	switch (mCalType) {
-	case 0:
-		calType = 1;
-		break;
-	case 1:
-		calType = 2;
-		break;
-	case 2:
-		calType = 1;
-		break;
-	case 3:
-		calType = 4;
-		break;
-	}
-	switch (mFitnType) {
-	case 0:
-		fitnType = 1;
-		break;
-	case 1:
-		fitnType = 4;
-		break;
-	}
-	switch (mValType) {
-	case 0:
-		valType = 1;
-		break;
-	case 1:
-		valType = 4;
-		break;
-	}
+	calType = mCalType;
+	fitnType = mFitnType;
+	valType = mValType;
 }
 
 void TuneDlg::DoDataExchange(CDataExchange* pDX)
@@ -256,38 +196,10 @@ void TuneDlg::saveMaxAandZ()
 
 void TuneDlg::setCalAndVal()
 {
-	switch (mCalType) {
-	case 0:
-		mH->setCalibrationType(1);
-		break;
-	case 1:
-		mH->setCalibrationType(2);
-		break;
-	case 2:
-		mH->setCalibrationType(1); //TODO
-		break;
-	case 3:
-		mH->setCalibrationType(4);
-		break;
-	}
-	int fitn, val;
-	switch (mFitnType) {
-	case 0:
-		fitn = 1;
-		break;
-	case 1:
-		fitn = 4;
-		break;
-	}
-	switch (mValType) {
-	case 0:
-		val = 1;
-		break;
-	case 1:
-		val = 4;
-		break;
-	}
-	mH->setFitnessType(fitn, val);
+	if (mCalType == 2)
+		mCalType = 0; //TODO
+	mH->setCalibrationType(mCalType);
+	mH->setFitnessType(mFitnType, mValType);
 }
 
 void TuneDlg::setNMKoeffs()

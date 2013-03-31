@@ -12,8 +12,10 @@ Mlcm::Mlcm()
 	mK = 2;
 	mEtta = 2;
 	mT = 0;
+	mMin = 1e-3;
 	mAlpha0 = 100;
 	mClick = new int (0);
+	mTime = new double [10];
 }
 
 Mlcm::~Mlcm()
@@ -38,7 +40,17 @@ void Mlcm::setParam(const Element &element)
 	mT = element.getT();
 	mNOrd = mNuh + ceil(mT);
 	mAlpha0 = element.getAlpha0();
+	if (mAlpha0 > mMin)
+		mTime0 = ceil((double) mAslope / mAlpha0);
+	else 
+		mTime0 = 1000000;
 	mAlpha = element.getAlphas();
+	for (int i = 0; i < mN; i++) {
+		if (mAlpha[i] > mMin)
+			mTime[i] = (double) mAslope / mAlpha[i];
+		else
+			mTime[i] = 1e10;
+	}
 	mZ = element.getZ();
 	makeHydrOrd();
 }
@@ -132,43 +144,40 @@ double Mlcm::makeStep(const double &P
 	if (P <= ET)
 		return countChannelWater(time, waterQueue, state);
 	double P0 = P - ET;
-	if (mN == 0)
-		toChannel(P0, ceil(mAslope * 1.0 / mAlpha0) + time - 1, 0, waterQueue);
+	if (mN == 0) {
+		Water newWater (P0, mTime0 + time - 1);
+		waterQueue[0].push(newWater);
+	}
 	else {
 		if (P0 > mAlpha[0]) {
-			toChannel(P0 - mAlpha[0], ceil(mAslope * 1.0 / mAlpha0) + time - 1, 0, waterQueue);
+			Water newWater (P0 - mAlpha0, mTime0 + time - 1);
+			waterQueue[0].push(newWater);
 			P0 = mAlpha[0];
 		}
 		double time1 = -1;
 		for (int i = 0; i < mN; i++) {
 			if (P0 + state[i + 1] < mZ[i]) {
 				state[i + 1] += P0;
-				toChannel (P0, ceil(time1 + mAslope * 1.0 / mAlpha[i]) + time, i + 1, waterQueue);
+				Water newWater (P0, ceil(time1 + mTime[i]) + time);
+				waterQueue[i + 1].push(newWater);
 				break;
 			}
 			time1 += (mZ[i] - state[i + 1]) * 1.0 / mAlpha[i];
 			if (i == mN - 1) {
 				state[i + 1] = mZ[i];
-				toChannel (P0, ceil(time1 + mAslope * 1.0 / mAlpha[i]) + time, i + 1, waterQueue);
+				Water newWater (P0, ceil(time1 + mTime[i]) + time);
+				waterQueue[i + 1].push(newWater);
 				break;
 			}
 			if (P0 > mAlpha[i + 1]) {
 				state[i + 1] = max(0.0, mZ[i] - mAlpha[i + 1]);
-				toChannel (P0 - mAlpha[i + 1], ceil(time1 + mAslope * 1.0 / mAlpha[i]) + time, i + 1, waterQueue);
+				Water newWater (P0 - mAlpha[i + 1], ceil(time1 + mTime[i + 1]) + time);
+				waterQueue[i + 1].push(newWater);
 				P0 = mAlpha[i + 1];
 			}
 		}
 	}
 	return countChannelWater(time, waterQueue, state);
-}
-
-void Mlcm::toChannel(const double &P
-					 , const int &time
-					 , const int &layer
-					 , queue<Water> *waterQueue) const
-{
-	Water newWater (P, time);
-	waterQueue[layer].push(newWater);
 }
 
 double Mlcm::countChannelWater(const int &time, queue<Water> *waterQueue, vector<double> &state) const

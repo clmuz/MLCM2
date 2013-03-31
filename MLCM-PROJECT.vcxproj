@@ -101,6 +101,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Hydrograph\Calibration\BruteForce.h" />
     <ClInclude Include="Hydrograph\Calibration\Calibration.h" />
     <ClInclude Include="Hydrograph\Calibration\NelderMead.h" />
     <ClInclude Include="Hydrograph\Calibration\stdafx.h" />
@@ -123,6 +124,7 @@
     <ClInclude Include="TuneDlg.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Hydrograph\Calibration\BruteForce.cpp" />
     <ClCompile Include="Hydrograph\Calibration\Calibration.cpp" />
     <ClCompile Include="Hydrograph\Calibration\NelderMead.cpp" />
     <ClCompile Include="Hydrograph\Element.cpp" />

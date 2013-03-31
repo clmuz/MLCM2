@@ -236,9 +236,9 @@ bool Element::checkPos() const
 	if ((t < 0) || (t > 24))
 		return 0;
 	for (int i = 0; i < N; i++) {
-		if ((Al[i] <= 0) || (Al[i] > maxA[i + 1]))
+		if ((Al[i] < mMin) || (Al[i] > maxA[i + 1]))
 			return 0;
-		if ((Z[i] <= 0) || (Z[i] > maxZ[i]))
+		if ((Z[i] < mMin) || (Z[i] > maxZ[i]))
 			return 0;
 	}
 	return 1;

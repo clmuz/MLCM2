@@ -83,12 +83,12 @@ void Calibration::setNMKoeffs(const double &koeff1, const double &koeff2)
 double Calibration::doCalStep(const int &N, Element &nowElement)
 {
 	switch (mCalType) {
-	case 1:
+	case 0:
 		mNM->changeN(N);
 		return mNM->doCalibration(nowElement);
-	case 2:
+	case 1:
 		return mNM->doComplexCalibration(N, nowElement);
-	case 4:
+	case 3:
 		return mBF->calibrateLayer(N, nowElement);
 	}
 	return -1;

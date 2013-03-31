@@ -3,7 +3,7 @@
 
 Fitness::Fitness(Mlcm *model)
 {
-	mMaxClassesNum = 5;
+	mMaxClassesNum = 2;
 	mCreatedClasses.resize(mMaxClassesNum + 1);
 	mFitnessType = -1;
 	mValType = -1;
@@ -22,12 +22,12 @@ void Fitness::createFitnessFunction(const int &fitnessType)
 		return;
 	mCreatedClasses[fitnessType] = 1;
 	switch (fitnessType) {
-	case 1:
+	case 0:
 		mMsof = new Msof (mModel);
 		mMsof->setMeasPerDay(mMeasPerDay);
 		mMsof->setRealVal(mRealVal, mGap);
 		break;
-	case 4:
+	case 1:
 		mAse = new AbsoluteSquareError (mModel);
 		mAse->setMeasPerDay(mMeasPerDay);
 		mAse->setRealVal(mRealVal, mGap);
@@ -54,9 +54,9 @@ void Fitness::setValType(const int &valType)
 double Fitness::getFitness() const
 {
 	switch (mFitnessType) {
-	case 1:
+	case 0:
 		return mMsof->countError();
-	case 4:
+	case 1:
 		return mAse->countError();
 	}
 	return 0;
@@ -67,9 +67,9 @@ double Fitness::getFitness(const int &fitnessType)
 	if (!mCreatedClasses[fitnessType])
 		createFitnessFunction(fitnessType);
 	switch (fitnessType) {
-	case 1:
+	case 0:
 		return mMsof->countError();
-	case 4:
+	case 1:
 		return mAse->countError();
 	}
 	return 0;
@@ -80,9 +80,9 @@ double Fitness::getFitness(const int &fitnessType, const vector<double> &modVal)
 	if (!mCreatedClasses[fitnessType])
 		createFitnessFunction(fitnessType);
 	switch (fitnessType) {
-	case 1:
+	case 0:
 		return mMsof->countError(modVal);
-	case 4:
+	case 1:
 		return mAse->countError(modVal);
 	}
 	return 0;
@@ -91,9 +91,9 @@ double Fitness::getFitness(const int &fitnessType, const vector<double> &modVal)
 double Fitness::getValFitness() const
 {
 	switch (mValType) {
-	case 1:
+	case 0:
 		return mMsof->countError();
-	case 4:
+	case 1:
 		return mAse->countError();
 	}
 	return 0;
@@ -102,9 +102,9 @@ double Fitness::getValFitness() const
 double Fitness::getValFitness(const vector<double> &modVal) const
 {
 	switch (mValType) {
-	case 1:
+	case 0:
 		return mMsof->countError(modVal);
-	case 4:
+	case 1:
 		return mAse->countError(modVal);
 	}
 	return 0;
@@ -119,10 +119,10 @@ void Fitness::setBegEnd(const unsigned int &begDay, const unsigned int &endDay)
 	for (int i = 0; i <= mMaxClassesNum; i++) {
 		if (mCreatedClasses[i]) {
 			switch (i) {
-			case 1:
+			case 0:
 				mMsof->setBegEnd(begDay, endDay);
 				break;
-			case 4:
+			case 1:
 				mAse->setBegEnd(begDay, endDay);
 				break;
 			}
@@ -142,10 +142,10 @@ void Fitness::setMeasPerDay(const int &measPerDay)
 	for (int i = 0; i < mMaxClassesNum; i++) {
 		if (mCreatedClasses[i]) {
 			switch (i) {
-			case 1:
+			case 0:
 				mMsof->setMeasPerDay(measPerDay);
 				break;
-			case 4:
+			case 1:
 				mAse->setMeasPerDay(measPerDay);
 				break;
 			}

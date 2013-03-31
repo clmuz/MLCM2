@@ -30,9 +30,8 @@ private:
 					, const int &time
 					, queue<Water> *waterQueue
 					, vector<double> &state) const;
-	void toChannel(const double &P, const int &time, const int &layer, queue<Water> *waterQueue) const;
 	double countChannelWater(const int &time, queue<Water> *waterQueue, vector<double> &state) const;
-	int mN, mNOrd, mNuh, mRealBeg, mRealEnd, *mClick;
-	double mC, mEtta, mK, mT, mAlpha0, mAslope;
+	int mN, mNOrd, mNuh, mRealBeg, mRealEnd, *mClick, mTime0;
+	double mC, mEtta, mK, mT, mAlpha0, mAslope, mMin, *mTime;
 	vector<double> mFxOrd, mAlpha, mZ, *mP, *mET, *mRealData;
 };
