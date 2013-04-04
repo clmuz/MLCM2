@@ -58,6 +58,9 @@ void TuneDlg::setHydrograph(Hydrograph *H)
 	mNMKoeff1 = koeffs[0];
 	mNMKoeff2 = koeffs[1];
 	mH->getNMParams(mNMStop, mNMLim);
+	mH->getSlsParams(mSlsStep, mSlsLim, mSls0);
+	if (mSls0 > 1)
+		mSls0--;
 }
 
 void TuneDlg::DoDataExchange(CDataExchange* pDX)
@@ -192,8 +195,6 @@ void TuneDlg::saveMaxAandZ()
 
 void TuneDlg::setCalAndVal()
 {
-	if (mCalType == 2)
-		mCalType = 0; //TODO
 	mH->setCalibrationType(mCalType);
 	mH->setFitnessType(mFitnType, mValType);
 }
@@ -227,6 +228,8 @@ void TuneDlg::OnBnClickedOk()
 	mH->setMinGrowth(mMinGrowth);
 	setNMKoeffs();
 	mH->setNMStopAndLim(mNMStop, mNMLim);
+	if (mSls0 > 1)
+		mSls0++;
 	mH->setSlsParam(mSlsStep, mSlsLim, mSls0);
 	CDialogEx::OnOK();
 }

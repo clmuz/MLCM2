@@ -13,7 +13,7 @@ public:
 	~MlcmShell();
 	void setDefFitnessType(const int &defFitnType);
 	void setValType(const int &valType);
-	void setInOutFormat(const int &inFormat, const int &outFormat);
+	void setOutFormat(const int &outFormat);
 	void printPrediction(const int *begDate, const int *endDate);
 	double printPrediction(const int *begDate, const int *endDate, const int &fitnessType);
 	void loadParametrs(const char *paramFile);
@@ -26,7 +26,7 @@ public:
 	void printParams(const char *outputParamFile);
 	Element getParams() const;
 	void getFitnessTypes(int &defType, int &valType) const;
-	void getInAndOutFormat(int &in, int &out) const;
+	int getOutFormat() const;
 	void getMaxAandZ(int *maxA, int *maxZ) const;
 	void getCLim(double &c1, double &c2) const;
 	void setOutFile(char *outFileName);
@@ -34,13 +34,14 @@ public:
 	void readPcp(const double &format, const char *filename);
 	void readDat(const double &format, const char *filename);
 	int click();
+	double countF(const Element &point);
 private:
 	double makeET(const int &month);
 	void readDat(const char *newDat);
 	int makeTheGap(const int *date1, const int *date2) const;
 	int giveDaysInMonth(const int &month, const int &year) const;
 	void readInFormat(ifstream &fin, int &code, int &month, int &day, double &value) const;
-	void readAndCheckFormat(ifstream &fin, int &code, int &month, int &day, double &value) const;
+	void readAndSetFormat(ifstream &fin, int &code, int &month, int &day, double &value);
 	void writeOutFormat(ofstream &fout, const int *date, const int &i, const int &begPoint, const double &value) const;
 	double getRealData(const int &i) const;
 	void incDate(int *date) const;

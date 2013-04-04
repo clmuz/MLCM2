@@ -2,13 +2,12 @@
 #include <cmath>
 #include "Msof.h"
 
-Msof::Msof(Mlcm *model)
-{
-	mModel = model;
-	mLowerLim = 1e-10;
-	mDayBeg = -1;
-	mDayEnd = -1;
-}
+Msof::Msof(Mlcm *model) :
+	mModel(model),
+	mLowerLim(1e-10),
+	mDayBeg(-1),
+	mDayEnd(-1)
+{ }
 
 void Msof::setBegEnd(const int &begDay, const int &endDay)
 {

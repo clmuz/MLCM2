@@ -62,7 +62,6 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	, mValTo(COleDateTime::GetCurrentTime())
 	, mModFrom(COleDateTime::GetCurrentTime())
 	, mModTo(COleDateTime::GetCurrentTime())
-	, mInFormat(0)
 	, mOutFormat(0)
 	, mOutFile(_T(""))
 	, mSaveMlcm(_T(""))
@@ -119,9 +118,8 @@ void CMLCMDlg::loadConfig(char *configName)
 	confin >> calType >> fitnType >> valType;
 	mH->setCalibrationType(calType);
 	mH->setFitnessType(fitnType, valType);
-	int inFormat, outFormat;
-	confin >> inFormat >> outFormat;
-	mH->setInOutFormat(inFormat, outFormat);
+	confin >> mOutFormat;
+	mH->setOutFormat(mOutFormat--);
 	double c1, c2;
 	confin >> c1 >> c2;
 	mH->setCLim(c1, c2);
@@ -168,11 +166,10 @@ void CMLCMDlg::loadConfig(char *configName)
 void CMLCMDlg::saveConfig(char *configName)
 {
 	ofstream confout(configName, ios::out);
-	int calType, defFitnType, valType, inFormat, outFormat;
+	int calType, defFitnType, valType;
 	mH->getCalAndFitnessTypes(calType, defFitnType, valType);
 	confout << calType << " " << defFitnType << " " << valType << endl;
-	mH->getInAndOutFormat(inFormat, outFormat);
-	confout << inFormat << " " << outFormat << endl;
+	confout << mH->getOutFormat() << endl;
 	int maxA[11], maxZ[10];
 	mH->getMaxAandZ(maxA, maxZ);
 	double c1, c2;
@@ -242,8 +239,6 @@ void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_DateTimeCtrl(pDX, Date_ValTo, mValTo);
 	DDX_DateTimeCtrl(pDX, Date_ModFrom, mModFrom);
 	DDX_DateTimeCtrl(pDX, Date_ModTo, mModTo);
-	DDX_CBIndex(pDX, Combo_InFormat, mInFormat);
-	DDV_MinMaxInt(pDX, mInFormat, 0, 2);
 	DDX_CBIndex(pDX, Combo_OutFormat, mOutFormat);
 	DDV_MinMaxInt(pDX, mOutFormat, 0, 3);
 	DDX_Text(pDX, Edit_OutFile, mOutFile);
@@ -270,7 +265,6 @@ BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
 	ON_BN_CLICKED(Button_SaveSett, &CMLCMDlg::OnBnClickedSavesett)
 	ON_BN_CLICKED(Button_SaveMlcm, &CMLCMDlg::OnBnClickedSavemlcm)
 	ON_BN_CLICKED(Button_LoadMlcm, &CMLCMDlg::OnBnClickedLoadmlcm)
-	ON_BN_CLICKED(Button_setInOutFormat, &CMLCMDlg::OnBnClickedsetinoutformat)
 	ON_BN_CLICKED(Button_outputFile, &CMLCMDlg::OnBnClickedoutputfile)
 	ON_BN_CLICKED(Button_deck, &CMLCMDlg::OnBnClickeddeck)
 	ON_BN_CLICKED(Button_pcp, &CMLCMDlg::OnBnClickedpcp)
@@ -279,7 +273,6 @@ BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
 	ON_BN_CLICKED(Button_Model, &CMLCMDlg::OnBnClickedModel)
 	ON_BN_CLICKED(Button_Validate, &CMLCMDlg::OnBnClickedValidate)
 	ON_BN_CLICKED(Button_ModAndVal, &CMLCMDlg::OnBnClickedModandval)
-	ON_CBN_SELCHANGE(Combo_InFormat, &CMLCMDlg::OnCbnSelchangeInformat)
 	ON_CBN_SELCHANGE(Combo_OutFormat, &CMLCMDlg::OnCbnSelchangeOutformat)
 END_MESSAGE_MAP()
 
@@ -403,7 +396,7 @@ void CMLCMDlg::OnBnClickedConfiginfo()
 	text += L"Данные по умолчанию хранятся в default.config\n";
 	text += L"Через пробелы три значения - используемая калибровка (0 - Нелдер-Мид, 1 - расширенный Нелдер-Мид, 2 - SLS, 3 - перебор), ";
 	text += L"используемая целевая функция и функция для валидации (и для того, и для другого 0 - MSOF, 1 - среднеквадратическая ошибка)\n";
-	text += L"Форматы входных и выходных файлов через пробел (справку для форматов можете посмотреть в информации для входных и выходных файлов)\n";
+	text += L"Формат выходных файлов (справку для форматов можете посмотреть в информации для выходных файлов)\n";
 	text += L"Ограничение на скорость трансформации паводочной волны, через пробел, сверху и снизу (0-1)\n";
 	text += L"Данные об ограничениях на слои - первая строка ограничение на скорость поверхностного стекания (в мм/ч), ";
 	text += L"затем десять строк скорость через слой (мм/ч) и ширина слоя (мм) через пробел\n";
@@ -411,8 +404,8 @@ void CMLCMDlg::OnBnClickedConfiginfo()
 	text += L"Данные для Нелдера-Мида - Условие останова и лимит на количество итераций\n";
 	text += L"Коэффициенты для начального симплекса\n";
 	text += L"Количество начальных симплексов в расширенном Нелдере-Миде и затем M строк с коэффициентами начальных симплексов.\n";
-	text += L"Данные для SLS - Шаг, лимит на количество проходов, калибровка нулевого слоя - 1 - Нелдером-Мидом, ";
-	text += L"2 - расширенным Нелдером-Мидом и 3 - перебор\n";
+	text += L"Данные для SLS - Шаг, лимит на количество проходов, тип предварительной калибровки - 1 - Нелдером-Мидом, ";
+	text += L"2 - расширенным Нелдером-Мидом и 4 - перебор\n";
 	text += L"Для всех калибровок - минимальный прирост при переходе от прошлого слоя к новому ";
 	text += L"(если функция ошибки уменьшается недостаточно быстро - калибровка завершается)";
 	mInfo->print(text);
@@ -463,20 +456,22 @@ void CMLCMDlg::OnBnClickedDiminfo()
 void CMLCMDlg::OnBnClickedLoadsett()
 {
 	char *loadSettChar;
-	if(doFileName(1, mLoadSett, &loadSettChar))
+	if(doFileName(1, mLoadSett, &loadSettChar)) {
 		try {
 			loadConfig(loadSettChar);
 		}
 		catch (const int &a) {
 			printError(a);
 		}
+	}
 }
 
 void CMLCMDlg::OnBnClickedSavesett()
 {
 	char *saveSettChar;
-	if(doFileName(0, mSaveSett, &saveSettChar))
+	if(doFileName(0, mSaveSett, &saveSettChar)) {
 		saveConfig(saveSettChar);
+	}
 }
 
 
@@ -505,14 +500,6 @@ void CMLCMDlg::OnBnClickedLoadmlcm()
 		}
 	}
 }
-
-
-void CMLCMDlg::OnBnClickedsetinoutformat()
-{
-	UpdateData(1);
-	mH->setInOutFormat(mInFormat + 1, mOutFormat + 1);
-}
-
 
 void CMLCMDlg::OnBnClickedoutputfile()
 {
@@ -614,12 +601,12 @@ void CMLCMDlg::OnBnClickedCalibrate()
 	int *calEnd = doDate(mCalTo);
 	mH->click();
 	try {
-		double val = mH->calibrate(calBegin, calEnd);
+		mH->calibrate(calBegin, calEnd);
 		int countOfClicks = mH->click();
-		val = mH->validate(calBegin, calEnd);
+		double val = mH->validate(calBegin, calEnd);
 		CString valStr;
 		valStr.Format(L"%f", val);
-		CString text = L"Калибрация выполнена. Валидация ";
+		CString text = L"Калибровка выполнена. Валидация ";
 		text += valStr;
 		CString clicks;
 		clicks.Format(L"%i", countOfClicks);
@@ -630,6 +617,7 @@ void CMLCMDlg::OnBnClickedCalibrate()
 	catch (const int &a) {
 		printError(a);
 	}
+	delete calBegin, calEnd;
 }
 
 
@@ -653,6 +641,7 @@ void CMLCMDlg::OnBnClickedValidate()
 	catch (const int &a) {
 		printError(a);
 	}
+	delete valBegin, valEnd;
 }
 
 
@@ -673,6 +662,7 @@ void CMLCMDlg::OnBnClickedModel()
 	catch (const int &a) {
 		printError(a);
 	}
+	delete modBegin, modEnd;
 }
 
 void CMLCMDlg::OnBnClickedModandval()
@@ -696,18 +686,11 @@ void CMLCMDlg::OnBnClickedModandval()
 	catch (const int &a) {
 		printError(a);
 	}
+	delete modValBegin, modValEnd;
 }
-
-
-void CMLCMDlg::OnCbnSelchangeInformat()
-{
-	UpdateData(1);
-	mH->setInOutFormat(mInFormat + 1, mOutFormat + 1);
-}
-
 
 void CMLCMDlg::OnCbnSelchangeOutformat()
 {
 	UpdateData(1);
-	mH->setInOutFormat(mInFormat + 1, mOutFormat + 1);
+	mH->setOutFormat(mOutFormat + 1);
 }

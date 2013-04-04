@@ -104,6 +104,7 @@
     <ClInclude Include="Hydrograph\Calibration\BruteForce.h" />
     <ClInclude Include="Hydrograph\Calibration\Calibration.h" />
     <ClInclude Include="Hydrograph\Calibration\NelderMead.h" />
+    <ClInclude Include="Hydrograph\Calibration\SLS.h" />
     <ClInclude Include="Hydrograph\Calibration\stdafx.h" />
     <ClInclude Include="Hydrograph\Element.h" />
     <ClInclude Include="Hydrograph\Fitness\AbsoluteSquareError.h" />
@@ -127,6 +128,7 @@
     <ClCompile Include="Hydrograph\Calibration\BruteForce.cpp" />
     <ClCompile Include="Hydrograph\Calibration\Calibration.cpp" />
     <ClCompile Include="Hydrograph\Calibration\NelderMead.cpp" />
+    <ClCompile Include="Hydrograph\Calibration\SLS.cpp" />
     <ClCompile Include="Hydrograph\Element.cpp" />
     <ClCompile Include="Hydrograph\Fitness\AbsoluteSquareError.cpp" />
     <ClCompile Include="Hydrograph\Fitness\Fitness.cpp" />

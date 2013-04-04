@@ -6,21 +6,22 @@
 
 using namespace std;
 
-MlcmShell::MlcmShell()
+MlcmShell::MlcmShell() :
+	mDatFormat(1),
+	mPcpFormat(1),
+	mETFormat(1),
+	mAslopeFormat(1000000),
+	mOutFormat(1),
+	mMeasPerDay(24),
+	mInfileFormat(1),
+	mOutfileFormat(1)
 {
-	mModel = new Mlcm();
-	mFitness = new Fitness(mModel);
+	Element::mMin = 1e-2;
+	mDatBeg[0] = -1;
 	mP.clear();
 	mDat.clear();
-	mDatFormat = 1;
-	mPcpFormat = 1;
-	mETFormat = 1;
-	mAslopeFormat = 1000000;
-	mOutFormat = 1;
-	mMeasPerDay = 24;
-	mDatBeg[0] = -1;
-	mInfileFormat = 1;
-	mOutfileFormat = 1;
+	mModel = new Mlcm();
+	mFitness = new Fitness(mModel);
 }
 
 MlcmShell::~MlcmShell()
@@ -39,9 +40,8 @@ void MlcmShell::setValType(const int &valType)
 	mFitness->setValType(valType);
 }
 
-void MlcmShell::setInOutFormat(const int &inFormat, const int &outFormat)
+void MlcmShell::setOutFormat(const int &outFormat)
 {
-	mInfileFormat = inFormat;
 	mOutfileFormat = outFormat;
 }
 
@@ -90,10 +90,10 @@ void MlcmShell::printPrediction(const int *begDate, const int *endDate)
 		rout << endl;
 	}
 	if (i % mMeasPerDay == 0)
-			incDate(nowDate);
-		writeOutFormat(rout, nowDate, i, dayBeg * mMeasPerDay, res[i]);
-		rout << endl;
+		incDate(nowDate);
+	writeOutFormat(rout, nowDate, i, dayBeg * mMeasPerDay, res[i]);
 	rout.close();
+	delete nowDate;
 }
 
 double MlcmShell::printPrediction(const int *begDate, const int *endDate, const int &fitnessType)
@@ -128,11 +128,11 @@ double MlcmShell::printPrediction(const int *begDate, const int *endDate, const 
 		rout << endl;
 	}
 	if (i % mMeasPerDay == 0)
-			incDate(nowDate);
-		writeOutFormat(rout, nowDate, i, dayBeg * mMeasPerDay, res[i]);
-		rout << endl;
+		incDate(nowDate);
+	writeOutFormat(rout, nowDate, i, dayBeg * mMeasPerDay, res[i]);
 	rout.close();
 	return val;
+	delete nowDate;
 }
 
 void MlcmShell::loadParametrs(const char *paramFile)
@@ -150,7 +150,7 @@ void MlcmShell::loadParametrs(const char *paramFile)
 	vector<double> Al(N), Z(N);
 	for (int i = 0; i < N - 1; i++)
 		pin >> Al[i] >> Z[i];
-	if (N - 1 > 0) {
+	if (N > 0) {
 		pin >> Al[N - 1];
 		if (!pin.ios::eof())
 			pin >> Z[N - 1];
@@ -218,10 +218,9 @@ void MlcmShell::getFitnessTypes(int &defType, int &valType) const
 	mFitness->getFitnessTypes(defType, valType);
 }
 
-void MlcmShell::getInAndOutFormat(int &in, int &out) const
+int MlcmShell::getOutFormat() const
 {
-	in = mInfileFormat;
-	out = mOutfileFormat;
+	return mOutfileFormat;
 }
 
 void MlcmShell::getMaxAandZ(int *maxA, int *maxZ) const
@@ -244,9 +243,15 @@ void MlcmShell::setOutFile(char *outFileName)
 	mOutput = outFileName;
 }
 
+double MlcmShell::countF(const Element &point)
+{
+	changeModelParametrs(point);
+	return getFitness();
+}
+
 double MlcmShell::makeET(const int &month)
 {
-	if ((month < 0) || (month > 11))
+	if ((month < 1) || (month > 12))
 		throw(0);
 	return mET[month - 1];
 }
@@ -289,46 +294,28 @@ void MlcmShell::readInFormat(ifstream &fin, int &code, int &month, int &day, dou
 	}
 }
 
-void MlcmShell::readAndCheckFormat(ifstream &fin, int &code, int &month, int &day, double &value) const
+void MlcmShell::readAndSetFormat(ifstream &fin, int &code, int &month, int &day, double &value)
 {
 	string line;
 	getline(fin, line);
-	stringstream linestream(line);
-	switch (mInfileFormat) {
-	case 1:
-		if (linestream >> code >> month >> day >> value)
-			return;
-		else {
-			fin.close();
-			throw(2);
-		}
-	case 2:
-		if (linestream >> code >> month >> day >> value)
-			throw(2);
-		linestream.str(line);
-		if (linestream >> month >> day >> value) {
-			code = 0;
-			return;
-		}
-		else {
-			fin.close();
-			throw(2);
-		}
-	case 3:
-		if (linestream >> month >> value) {
-			fin.close();
-			throw(2);
-		}
-		linestream.str(line);
-		if (!(linestream >> value)) {
-			fin.close();
-			throw(2);
-		}
+	stringstream l1(line), l2(line), l3(line);
+	if (l1 >> code >> month >> day >> value) {
+		mInfileFormat = 1;
+		return;
+	}
+	if (l2 >> month >> day >> value) {
+		mInfileFormat = 2;
+		code = 0;
+		return;
+	}
+	if (l3 >> value) {
+		mInfileFormat = 3;
 		code = 0;
 		month = 113;
 		day = 1;
 		return;
 	}
+	throw(2);
 }
 
 void MlcmShell::writeOutFormat(ofstream &fout, const int *date, const int &i, const int &begPoint, const double &value) const
@@ -365,7 +352,7 @@ void MlcmShell::readPcp(const double &format, const char *filename)
 	vector<double> ET;
 	int code, month, day;
 	double tmp;
-	readAndCheckFormat(pcpIn, code, month, day, tmp);
+	readAndSetFormat(pcpIn, code, month, day, tmp);
 	mCode = code;
 	mPcpBeg[0] = day;
 	mPcpBeg[1] = month / 100;
@@ -404,7 +391,7 @@ void MlcmShell::readDat(const double &format, const char *filename)
 	ifstream datIn (filename, ios::in);
 	int code, month, day;
 	double tmp;
-	readAndCheckFormat(datIn, code, month, day, tmp);
+	readAndSetFormat(datIn, code, month, day, tmp);
 	mDat.clear();
 	mDatBeg[0] = day;
 	mDatBeg[1] = month / 100;

@@ -3,17 +3,17 @@
 #include "Gamma.h"
 #include "Mlcm.h"
 
-Mlcm::Mlcm()
+Mlcm::Mlcm() :
+	mRealBeg(0),
+	mRealEnd(0),
+	mN(0),
+	mC(0.5),
+	mK(2),
+	mEtta(2),
+	mT(0),
+	mMin(1e-3),
+	mAlpha0(100)
 {
-	mRealBeg = 0;
-	mRealEnd = 0;
-	mN = 0;
-	mC = 0.5;
-	mK = 2;
-	mEtta = 2;
-	mT = 0;
-	mMin = 1e-3;
-	mAlpha0 = 100;
 	mClick = new int (0);
 	mTime = new double [10];
 }
@@ -150,7 +150,7 @@ double Mlcm::makeStep(const double &P
 	}
 	else {
 		if (P0 > mAlpha[0]) {
-			Water newWater (P0 - mAlpha0, mTime0 + time - 1);
+			Water newWater (P0 - mAlpha[0], mTime0 + time - 1);
 			waterQueue[0].push(newWater);
 			P0 = mAlpha[0];
 		}

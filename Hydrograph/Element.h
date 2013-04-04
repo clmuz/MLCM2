@@ -34,11 +34,9 @@ public:
 	vector<double> getAlphas() const;
 	vector<double> getZ() const;
 	bool checkPos() const;
-	static double maxA[11], maxZ[10], minC, maxC;
+	static double maxA[11], maxZ[10], minC, maxC, mMin;
 protected:
 	int N;
 	double a, c, k, e, t;
 	vector<double> Al, Z;
-private:
-	double mMin;
 };

@@ -96,6 +96,9 @@
     <ClInclude Include="Hydrograph\Calibration\BruteForce.h">
       <Filter>Заголовочные файлы\Hydrograph\Calibration</Filter>
     </ClInclude>
+    <ClInclude Include="Hydrograph\Calibration\SLS.h">
+      <Filter>Заголовочные файлы\Hydrograph\Calibration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Hydrograph\Element.cpp">
@@ -144,6 +147,9 @@
       <Filter>Заголовочные файлы\Диалоги</Filter>
     </ClCompile>
     <ClCompile Include="Hydrograph\Calibration\BruteForce.cpp">
+      <Filter>Заголовочные файлы\Hydrograph\Calibration</Filter>
+    </ClCompile>
+    <ClCompile Include="Hydrograph\Calibration\SLS.cpp">
       <Filter>Заголовочные файлы\Hydrograph\Calibration</Filter>
     </ClCompile>
   </ItemGroup>

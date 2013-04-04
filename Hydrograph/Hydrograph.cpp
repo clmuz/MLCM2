@@ -23,9 +23,9 @@ void Hydrograph::setFitnessType(const int &fitnDefType, const int &valType)
 	mMlcmSh->setValType(valType);
 }
 
-void Hydrograph::setInOutFormat(const int &inFormat, const int &outFormat)
+void Hydrograph::setOutFormat(const int &outFormat)
 {
-	mMlcmSh->setInOutFormat(inFormat, outFormat);
+	mMlcmSh->setOutFormat(outFormat);
 }
 
 void Hydrograph::setMaxAandZ(const int *maxA, const int *maxZ)
@@ -107,9 +107,9 @@ void Hydrograph::getCalAndFitnessTypes(int &calType, int &defFitnType, int &valT
 	mMlcmSh->getFitnessTypes(defFitnType, valType);
 }
 
-void Hydrograph::getInAndOutFormat(int &in, int &out) const
+int Hydrograph::getOutFormat() const
 {
-	mMlcmSh->getInAndOutFormat(in, out);
+	return mMlcmSh->getOutFormat();
 }
 
 void Hydrograph::getMaxAandZ(int *maxA, int *maxZ) const
@@ -134,14 +134,12 @@ int Hydrograph::getNMKoeffs(std::vector<double> &koeffs) const
 
 void Hydrograph::getSlsParams(double &slsStep, int &slsLim, int &slsCalType) const
 {
-	slsStep = 1;
-	slsLim = 1;
-	slsCalType = 1;
+	mCal->getSlsParams(slsStep, slsLim, slsCalType);
 }
 
 void Hydrograph::setSlsParam(const double &slsStep, const int &slsLim, const int &slsCalType)
 {
-
+	mCal->setSlsParam(slsStep, slsLim, slsCalType);
 }
 
 double Hydrograph::getMinGrowth() const

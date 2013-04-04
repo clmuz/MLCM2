@@ -2,12 +2,11 @@
 #include <cmath>
 #include "AbsoluteSquareError.h"
 
-AbsoluteSquareError::AbsoluteSquareError(Mlcm *model)
-{
-	mModel = model;
-	mDayBeg = -1;
-	mDayEnd = -1;
-}
+AbsoluteSquareError::AbsoluteSquareError(Mlcm *model) :
+	mModel(model),
+	mDayBeg(-1),
+	mDayEnd(-1)
+{ }
 
 double AbsoluteSquareError::countError() const
 {

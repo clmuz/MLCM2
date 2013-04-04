@@ -8,7 +8,6 @@ public:
 	explicit BruteForce(MlcmShell *modelSh);
 	void setBFParams(const int &stepsNum, const int &iterNum);
 	void getBFParams(int &stepsNum, int &iterNum) const;
-	double calibrate0(Element &best) const;
 	double calibrateLayer(const int &N, Element &best) const;
 private:
 	void calibrateGap(const int &N, double &f, const double *leftBorder, const double &width, Element &best) const;
@@ -19,8 +18,7 @@ private:
 				, const double *leftBorder
 				, Element now
 				, Element &best) const;
-	double countF(const Element &point) const;
-	MlcmShell *mMlcmSh;
+	MlcmShell *mModelSh;
 	int mStepsNum, mIterNum;
 	double mMax, mMin;
 };

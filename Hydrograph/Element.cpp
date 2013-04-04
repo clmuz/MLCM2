@@ -1,21 +1,20 @@
 #include "stdafx.h"
 #include "Element.h"
 
-double Element::maxA[11], Element::maxZ[10], Element::minC, Element::maxC;
+double Element::maxA[11], Element::maxZ[10], Element::minC, Element::maxC, Element::mMin;
 
 Element::Element()
 {
 }
 
-Element::Element(const int &numLayers)
+Element::Element(const int &numLayers) :
+	N(numLayers),
+	a(mMin),
+	c(minC),
+	k(1),
+	e(1),
+	t(0)
 {
-	mMin = 1e-2;
-	N = numLayers;
-	a = mMin;
-	c = minC;
-	k = 1;
-	e = 1;
-	t = 0;
 	vector<double> newA (N, mMin);
 	vector<double> newZ (N, mMin);
 	Al = newA;
@@ -124,7 +123,7 @@ void Element::plus(const double &koeff, const int &coord)
 		e += 4 * koeff;
 		return;
 	case 4:
-		t = 24 * koeff;
+		t += 24 * koeff;
 		return;
 	default:
 		if (coord % 2 == 1) {
@@ -177,8 +176,8 @@ double* Element::toKoeffs() const
 	koeffs[3] = (e - 1) / 4.0;
 	koeffs[4] = t / 24.0;
 	for (int i = 0; i < N; i++) {
-		koeffs[2 * N + 5] = Al[i] / maxA[i + 1];
-		koeffs[2 * N + 6] = Al[i] / maxZ[i];
+		koeffs[2 * i + 5] = Al[i] / maxA[i + 1];
+		koeffs[2 * i + 6] = Z[i] / maxZ[i];
 	}
 	return koeffs;
 }

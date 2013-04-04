@@ -15,7 +15,7 @@ public:
 	double validate(const int *begDate, const int *endDate);
 	void setCalibrationType(const int &calType);
 	void setFitnessType(const int &fitnDefType, const int &valType);
-	void setInOutFormat(const int &inFormat, const int &outFormat);
+	void setOutFormat(const int &outFormat);
 	void setMaxAandZ(const int *maxA, const int *maxZ);
 	void setNMStopAndLim(const double &NMStop, const int &NMLim);
 	void setNMKoeffs(const double &koeff1, const double &koeff2);
@@ -24,7 +24,7 @@ public:
 	void setCLim(const double &c1, const double &c2);
 	void setBruteforceParams(const int &steps, const int &it);
 	void getCalAndFitnessTypes(int &calType, int &defFitnType, int &valType) const;
-	void getInAndOutFormat(int &in, int &out) const;
+	int getOutFormat() const;
 	void getMaxAandZ(int *maxA, int *maxZ) const;
 	void getBruteforceParams(int &steps, int &iter) const;
 	void getNMParams(double &stop, int &iter) const;

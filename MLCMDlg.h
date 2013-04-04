@@ -77,7 +77,6 @@ public:
 	afx_msg void OnBnClickedSavesett();
 	afx_msg void OnBnClickedSavemlcm();
 	afx_msg void OnBnClickedLoadmlcm();
-	afx_msg void OnBnClickedsetinoutformat();
 	afx_msg void OnBnClickedoutputfile();
 	afx_msg void OnBnClickeddeck();
 	afx_msg void OnBnClickedpcp();

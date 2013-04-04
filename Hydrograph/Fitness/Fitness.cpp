@@ -1,19 +1,29 @@
 #include "stdafx.h"
 #include "Fitness.h"
 
-Fitness::Fitness(Mlcm *model)
+Fitness::Fitness(Mlcm *model) :
+	mMaxClassesNum(2),
+	mFitnessType(1),
+	mValType(-1),
+	mModel(model)
 {
-	mMaxClassesNum = 2;
 	mCreatedClasses.resize(mMaxClassesNum + 1);
-	mFitnessType = -1;
-	mValType = -1;
-	mModel = model;
 }
 
 Fitness::~Fitness()
 {
-	delete mMsof;
-	delete mAse;
+	for (int i = 0; i < mMaxClassesNum; i++) {
+		if(mCreatedClasses[i]) {
+			switch(i) {
+			case 0:
+				delete mMsof;
+				break;
+			case 1:
+				delete mAse;
+				break;
+			}
+		}
+	}
 }
 
 void Fitness::createFitnessFunction(const int &fitnessType)
