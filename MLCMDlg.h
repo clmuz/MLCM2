@@ -1,40 +1,22 @@
-
-// MLCMDlg.h : файл заголовка
-//
-
 #pragma once
 #include "atlcomtime.h"
 #include "TuneDlg.h"
 #include "InfoDlg.h"
 #include "Hydrograph\Hydrograph.h"
 
+// Главное диалоговое окно
 
-// диалоговое окно CMLCMDlg
 class CMLCMDlg : public CDialogEx
 {
-// Создание
 public:
-	CMLCMDlg(CWnd* pParent = NULL);	// стандартный конструктор
+	CMLCMDlg(CWnd* pParent = NULL);
 	~CMLCMDlg();
 
 // Данные диалогового окна
 	enum { IDD = IDD_MLCM_DIALOG };
 
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// поддержка DDX/DDV
-
-private:
-	void loadConfig(char *configName);
-	void saveConfig(char *configName);
-	bool doFileName(bool loadFile, CString &edit_str, char **charName);
-	double doComboFormats(const CString &combo);
-	int *doDate(const COleDateTime &date);
-	void printError(const int &a);
-	Hydrograph *mH;
-	InfoDlg *mInfo;
-	bool mIsDeck, mIsOutfile, mIsPcp;
-// Реализация
 protected:
+	virtual void DoDataExchange(CDataExchange* pDX);	// поддержка DDX/DDV
 	HICON m_hIcon;
 
 	// Созданные функции схемы сообщений
@@ -43,7 +25,32 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
 private:
+	//Загрузка настроек модели
+	void loadConfig(char *configName);
+	//Сохранение настроек
+	void saveConfig(char *configName);
+	//Функция, вызывающая окно Загрузить-сохранить и конвертирующая в нужный тип название файла
+	bool doFileName(bool loadFile, CString &edit_str, char **charName);
+	//Функция, по комбобоксу выдающая размерность данных
+	double doComboFormats(const CString &combo);
+	//По дате выдающая дату в формате int[3] день - месяц - год
+	int *doDate(const COleDateTime &date);
+	//Обработчик эксепшенов
+	void printError(const int &a);
+	//Модель
+	Hydrograph *mH;
+	//Окно справки
+	InfoDlg *mInfo;
+	//Был загружен файл водосбора
+	bool mIsDeck;
+	//Был задан выходной файл
+	bool mIsOutfile;
+	//Был загружен файл с осадками
+	bool mIsPcp;
+
+	//Переменные окна и обработчики событий
 	CString mSaveSett;
 	CString mLoadSett;
 	CString mComboPcp;
@@ -64,6 +71,8 @@ private:
 	CString mSaveMlcm;
 	CString mLoadMlcm;
 	int mComboModAndVal;
+	COleDateTime mModValFrom;
+	COleDateTime mModValTo;
 public:
 	afx_msg void OnBnClickedTune();
 	afx_msg void OnBnClickedMaininfo();
@@ -87,7 +96,4 @@ public:
 	afx_msg void OnBnClickedModandval();
 	afx_msg void OnCbnSelchangeInformat();
 	afx_msg void OnCbnSelchangeOutformat();
-private:
-	COleDateTime mModValFrom;
-	COleDateTime mModValTo;
 };

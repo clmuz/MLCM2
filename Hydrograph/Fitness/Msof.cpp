@@ -2,9 +2,10 @@
 #include <cmath>
 #include "Msof.h"
 
+const double Msof::mLowerLim = 1e-7;
+
 Msof::Msof(Mlcm *model) :
 	mModel(model),
-	mLowerLim(1e-10),
 	mDayBeg(-1),
 	mDayEnd(-1)
 { }
@@ -98,18 +99,6 @@ double Msof::countError(const vector<double> &modVal) const
 		sum += pow(modMonthly[i] - mAveMonthly[i], 2);
 	J += mSigma1to3sq * sum;
 	return sqrt(J);
-}
-
-void Msof::getSigmas(double &sigma1to2sq, double &sigma1to3sq) const
-{
-	sigma1to2sq = mSigma1to2sq;
-	sigma1to3sq = mSigma1to3sq;
-}
-
-void Msof::getAverages(vector<double> &aveDaily, vector<double> &aveMonthly) const
-{
-	aveDaily = mAveDaily;
-	aveMonthly = mAveMonthly;
 }
 
 void Msof::countRealVal() {

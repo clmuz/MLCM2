@@ -2,6 +2,8 @@
 #include "MlcmShell.h"
 #include "Calibration\Calibration.h"
 
+//Внешний класс для работы с моделью
+
 class Hydrograph
 {
 public:
@@ -39,6 +41,8 @@ public:
 	void readDat(const double &format, const char *filename);
 	int click();
 private:
+	//Оболочка модели
 	MlcmShell *mMlcmSh;
+	//Калибровка
 	Calibration *mCal;
 };

@@ -1,10 +1,11 @@
 #include "stdafx.h"
 #include "Fitness.h"
 
+const int Fitness::mMaxClassesNum = 2;
+
 Fitness::Fitness(Mlcm *model) :
-	mMaxClassesNum(2),
 	mFitnessType(1),
-	mValType(-1),
+	mValType(1),
 	mModel(model)
 {
 	mCreatedClasses.resize(mMaxClassesNum + 1);

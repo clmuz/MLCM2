@@ -10,7 +10,6 @@ MlcmShell::MlcmShell() :
 	mDatFormat(1),
 	mPcpFormat(1),
 	mETFormat(1),
-	mAslopeFormat(1000000),
 	mOutFormat(1),
 	mMeasPerDay(24),
 	mInfileFormat(1),
@@ -263,7 +262,7 @@ void MlcmShell::readDeck(const double &format, const char *filename)
 	double Aslope, dt, tmp;
 	int nuh;
 	deckIn >> Aslope >> dt >> nuh;
-	mAslope = Aslope * mAslopeFormat;
+	mAslope = Aslope;
 	mModel->setAslopeAndNuh(mAslope, nuh);
 	mMeasPerDay = 24.0 / dt;
 	mET.clear();

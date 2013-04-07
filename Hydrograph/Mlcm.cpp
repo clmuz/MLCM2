@@ -3,6 +3,8 @@
 #include "Gamma.h"
 #include "Mlcm.h"
 
+const double Mlcm::mMin = 1e-3;
+
 Mlcm::Mlcm() :
 	mRealBeg(0),
 	mRealEnd(0),
@@ -11,7 +13,6 @@ Mlcm::Mlcm() :
 	mK(2),
 	mEtta(2),
 	mT(0),
-	mMin(1e-3),
 	mAlpha0(100)
 {
 	mClick = new int (0);

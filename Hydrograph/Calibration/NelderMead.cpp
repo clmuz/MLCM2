@@ -1,15 +1,13 @@
 #include "stdafx.h"
 #include <cmath>
 #include "NelderMead.h"
-#include <iostream>
+
+const double NelderMead::mAlpha = 1.0, NelderMead::mBetta = .5, NelderMead::mGamma = 2.0;
+const double NelderMead::mMax = 1e-15;
 
 NelderMead::NelderMead(MlcmShell *modelSh) :
 	mModelSh(modelSh),
-	mAlpha(1),
-	mBetta(0.5),
-	mGamma(2),
 	mN(0),
-	mMax(1e15),
 	mE(0.1),
 	mLimit(1000),
 	mComplexNum(1),
@@ -170,7 +168,7 @@ void NelderMead::setKoeffs(const double &koeff1, const double &koeff2)
 
 void NelderMead::setKoeffs(const vector<double> &koeffs)
 {
-	mComplexNum = koeffs.size() / 2;
+	mComplexNum = floor(koeffs.size() * 0.5);
 	mKoeffs = koeffs;
 	if (mComplexNum < 1) {
 		mComplexNum = 1;

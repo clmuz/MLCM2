@@ -52,7 +52,6 @@ void Calibration::setMinGrowth(const double &minGrowth)
 void Calibration::setBFParams(const int &stepsNum, const int &iterNum)
 {
 	mBF->setBFParams(stepsNum, iterNum);
-	mSLS->setBFParams(stepsNum, iterNum);
 }
 
 void Calibration::getBFParams(int &stepsNum, int &iterNum) const

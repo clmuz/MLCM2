@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 
+// ласс, в котором хран€тс€ все параметры MLCM. ¬ будущих верси€х скорее всего этого класса не будет
+
 using namespace std;
 
 class Element

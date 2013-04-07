@@ -1,13 +1,7 @@
-// InfoDlg.cpp: файл реализации
-//
-
 #include "stdafx.h"
 #include "MLCM-PROJECT.h"
 #include "InfoDlg.h"
 #include "afxdialogex.h"
-
-
-// диалоговое окно InfoDlg
 
 IMPLEMENT_DYNAMIC(InfoDlg, CDialogEx)
 
@@ -36,6 +30,3 @@ void InfoDlg::print(const CString &text)
 
 BEGIN_MESSAGE_MAP(InfoDlg, CDialogEx)
 END_MESSAGE_MAP()
-
-
-// обработчики сообщений InfoDlg

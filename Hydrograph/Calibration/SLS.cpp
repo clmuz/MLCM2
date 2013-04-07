@@ -1,15 +1,14 @@
 #include "stdafx.h"
 #include "SLS.h"
 
+const double SLS::mMax = 1e15;
 
 SLS::SLS(MlcmShell *modelSh, Calibration *cal) :
 	mModelSh(modelSh),
 	mCal(cal),
 	mStep(0.1),
 	mLim(0),
-	m0Type(0),
-	mBFSteps(1),
-	mMax(1e15)
+	m0Type(0)
 { }
 
 void SLS::setParams(const double &step, const int &lim, const int &cal0Type)
@@ -25,12 +24,6 @@ void SLS::getParams(double &step, int &lim, int &cal0Type) const
 	step = mStep;
 	lim = mLim;
 	cal0Type = m0Type;
-}
-
-void SLS::setBFParams(const int &stepsNum, const int &iterNum)
-{
-	mBFSteps = stepsNum;
-	mBFitNum = iterNum;
 }
 
 double SLS::doCalibration(const int &N, Element &bestElement)

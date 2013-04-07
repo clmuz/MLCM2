@@ -1,14 +1,8 @@
-// TuneDlg.cpp: файл реализации
-//
-
 #include "stdafx.h"
 #include <fstream>
 #include "MLCM-PROJECT.h"
 #include "TuneDlg.h"
 #include "afxdialogex.h"
-
-
-// диалоговое окно TuneDlg
 
 IMPLEMENT_DYNAMIC(TuneDlg, CDialogEx)
 

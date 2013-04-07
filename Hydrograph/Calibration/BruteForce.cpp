@@ -1,12 +1,12 @@
 #include "stdafx.h"
 #include "BruteForce.h"
 
+const double BruteForce::mMax = 1e15, BruteForce::mMin = 1e-2;
+
 BruteForce::BruteForce(MlcmShell *modelSh) :
 	mModelSh(modelSh),
 	mStepsNum(1),
-	mIterNum(1),
-	mMax(1e15),
-	mMin(1e-2)
+	mIterNum(1)
 { }
 
 void BruteForce::setBFParams(const int &stepsNum, const int &iterNum)

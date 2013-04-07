@@ -1,25 +1,24 @@
 #pragma once
 
-
-// диалоговое окно InfoDlg
+// диалоговое окно информации (не использую стандартный MessageBox из-за звука)
 
 class InfoDlg : public CDialogEx
 {
 	DECLARE_DYNAMIC(InfoDlg)
 
 public:
-	InfoDlg(CWnd* pParent = NULL);   // стандартный конструктор
+	InfoDlg(CWnd* pParent = NULL);
 	virtual ~InfoDlg();
 
 // Данные диалогового окна
 	enum { IDD = Dialog_Info };
+	//Вывод техта
 	void print(const CString &text);
-	void setCalAndVal(const int &calType, const int &fitnType, const int &valType);
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // поддержка DDX/DDV
-
 	DECLARE_MESSAGE_MAP()
 private:
+	//переменная текстового поля
 	CString mInfo;
 };
