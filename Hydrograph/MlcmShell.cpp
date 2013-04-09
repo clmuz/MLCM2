@@ -9,16 +9,22 @@ using namespace std;
 MlcmShell::MlcmShell() :
 	mDatFormat(1),
 	mPcpFormat(1),
-	mETFormat(1),
 	mOutFormat(1),
 	mMeasPerDay(24),
 	mInfileFormat(1),
-	mOutfileFormat(1)
+	mOutfileFormat(1),
+	mHeatDays(0),
+	mEtD(0),
+	mEtEE(1)
 {
 	Element::mMin = 1e-2;
 	mDatBeg[0] = -1;
+	for (int i = 0; i < 6; i++) {
+		mSnow[i] = 1;
+	}
 	mP.clear();
 	mDat.clear();
+	mET.clear();
 	mModel = new Mlcm();
 	mFitness = new Fitness(mModel);
 }
@@ -248,29 +254,57 @@ double MlcmShell::countF(const Element &point)
 	return getFitness();
 }
 
-double MlcmShell::makeET(const int &month)
+double MlcmShell::makeET(const int &day, const int &month, const double &p) const
 {
-	if ((month < 1) || (month > 12))
-		throw(0);
-	return mET[month - 1];
+	if (p > 1e-3)
+		return 0;
+	//Есть ли сейчас снег
+	if ( ((month < mSnow[3]) || ((month == mSnow[3]) && (day <= mSnow[2])) ) 
+		|| ((month > mSnow[1]) || ((month == mSnow[1]) && (day >= mSnow[0])) ) )
+		return 0;
+	//Две недели после снега
+	if ( (month < mSnow[5]) || ((month == mSnow[5]) && (day <= mSnow[4])) ) {
+		return 0.44 * mEtEE;
+	}
+	return mEtEE * (1 - exp(-0.65 * mEtD / mEtEE));
 }
 
-void MlcmShell::readDeck(const double &format, const char *filename)
+void MlcmShell::setHeatDays(const int &countOfHeatDays)
 {
-	mETFormat = format;
+	mHeatDays = countOfHeatDays;
+	mModel->setHeatSteps(countOfHeatDays * mMeasPerDay);
+}
+
+int MlcmShell::getHeatDays()
+{
+	mHeatDays = mModel->getHeatSteps() / mMeasPerDay;
+	return mHeatDays;
+}
+
+void MlcmShell::readDeck(const char *filename)
+{
 	ifstream deckIn (filename, ios::in);
-	double Aslope, dt, tmp;
+	double Aslope, dt;
 	int nuh;
 	deckIn >> Aslope >> dt >> nuh;
-	mAslope = Aslope;
+	mAslope = Aslope * 1000000;
 	mModel->setAslopeAndNuh(mAslope, nuh);
 	mMeasPerDay = 24.0 / dt;
-	mET.clear();
-	for (int i = 0; i < 12; i++) {
-		deckIn >> tmp;
-		mET.push_back(tmp * mETFormat);
+	deckIn >> mEtD >> mEtEE;
+	for (int i = 0; i < 4; i++) {
+		deckIn >> mSnow[i];
+	}
+	int daysInLastSnowMonth = giveDaysInMonth(mSnow[3], 2013);
+	mSnow[4] = mSnow[2] + 14;
+	if (mSnow[4] > daysInLastSnowMonth) {
+		mSnow[4] = daysInLastSnowMonth;
+		mSnow[5] = mSnow[3] + 1;
+	}
+	else {
+		mSnow[5] = mSnow[3];
 	}
 	mFitness->setMeasPerDay(mMeasPerDay);
+	mModel->setHeatSteps(mHeatDays * mMeasPerDay);
 	deckIn.close();
 }
 
@@ -334,6 +368,9 @@ void MlcmShell::writeOutFormat(ofstream &fout, const int *date, const int &i, co
 		fout << nMonth << " " << date[0] << " " << mP[begPoint + i] * mOutFormat << " "
 			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
 		return;
+	case 5:
+		fout << nMonth << " " << date[0] << " " << mP[begPoint + i] * mOutFormat << " " << mET[begPoint + i] * mOutFormat << " "
+			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
 	}
 }
 
@@ -348,7 +385,6 @@ void MlcmShell::readPcp(const double &format, const char *filename)
 {
 	mPcpFormat = format;
 	ifstream pcpIn (filename, ios::in);
-	vector<double> ET;
 	int code, month, day;
 	double tmp;
 	readAndSetFormat(pcpIn, code, month, day, tmp);
@@ -361,20 +397,29 @@ void MlcmShell::readPcp(const double &format, const char *filename)
 	else
 		mPcpBeg[2] += 2000;
 	mP.clear();
+	mET.clear();
 	mP.push_back(tmp * mPcpFormat);
-	ET.push_back(makeET(month / 100));
-	int i = 0;
+	int *nowDate = new int [3];
+	nowDate[0] = day;
+	nowDate[1] = month / 100;
+	nowDate[2] = month % 100;
+	mET.push_back(makeET(nowDate[0], nowDate[1], mP.back()));
+	int i = 1;
 	while (!pcpIn.ios::eof()) {
+		if (i % mMeasPerDay == 0)
+			incDate(nowDate);
 		readInFormat(pcpIn, code, month, day, tmp);
 		mP.push_back(tmp * mPcpFormat);
-		ET.push_back(makeET(month / 100));
+		mET.push_back(makeET(nowDate[0], nowDate[1], mP.back()));
 		if (i++ == 1000000) {
 			pcpIn.close();
 			mP.clear();
+			delete nowDate;
 			throw(0);
 		}
 	}
-	mModel->setPandET(&mP, &ET);
+	delete nowDate;
+	mModel->setPandET(&mP, &mET);
 	if (!mDat.empty()) {
 		mGap = makeTheGap(mDatBeg, mPcpBeg);
 		mModel->setRealData(&mDat, --mGap * mMeasPerDay);

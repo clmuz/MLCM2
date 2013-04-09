@@ -54,7 +54,6 @@ private:
 	CString mSaveSett;
 	CString mLoadSett;
 	CString mComboPcp;
-	CString mComboDeck;
 	CString mComboDat;
 	CString mEditPcp;
 	CString mEditDeck;
@@ -73,6 +72,7 @@ private:
 	int mComboModAndVal;
 	COleDateTime mModValFrom;
 	COleDateTime mModValTo;
+	int mHeatDays;
 public:
 	afx_msg void OnBnClickedTune();
 	afx_msg void OnBnClickedMaininfo();
@@ -94,6 +94,6 @@ public:
 	afx_msg void OnBnClickedModel();
 	afx_msg void OnBnClickedValidate();
 	afx_msg void OnBnClickedModandval();
-	afx_msg void OnCbnSelchangeInformat();
 	afx_msg void OnCbnSelchangeOutformat();
+	afx_msg void OnEnChangeHeatdays();
 };

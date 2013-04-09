@@ -152,9 +152,9 @@ void Hydrograph::setOutFile(char *outFileName)
 	mMlcmSh->setOutFile(outFileName);
 }
 
-void Hydrograph::readDeck(const double &format, const char *filename)
+void Hydrograph::readDeck(const char *filename)
 {
-	mMlcmSh->readDeck(format, filename);
+	mMlcmSh->readDeck(filename);
 }
 
 void Hydrograph::readPcp(const double &format, const char *filename)
@@ -170,4 +170,14 @@ void Hydrograph::readDat(const double &format, const char *filename)
 int Hydrograph::click()
 {
 	return mMlcmSh->click();
+}
+
+void Hydrograph::setHeatDays(const int &countOfHeatDays)
+{
+	mMlcmSh->setHeatDays(countOfHeatDays);
+}
+
+int Hydrograph::getHeatDays() const
+{
+	return mMlcmSh->getHeatDays();
 }

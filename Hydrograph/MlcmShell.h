@@ -37,6 +37,10 @@ public:
 	double getValFitness() const;
 	//Установить начало и конец действия целевой функции
 	void setFitnessBegEnd(const int *begDate, const int *endDate);
+	//Установить количество дней прогрева модели
+	void setHeatDays(const int &countOfHeatDays);
+	//Узнать количество дней прогрева модели
+	int getHeatDays();
 	//Распечатать в файл параметры модели
 	void printParams(const char *outputParamFile);
 	//Получить параметры
@@ -49,7 +53,7 @@ public:
 	//Задать выходной файл
 	void setOutFile(char *outFileName);
 	//Загрузить данные о водосборе
-	void readDeck(const double &format, const char *filename);
+	void readDeck(const char *filename);
 	//Загрузить файл с осдаками
 	void readPcp(const double &format, const char *filename);
 	//Загрузить файл с релаьными значениями
@@ -59,8 +63,8 @@ public:
 	//Посчитать целевую функцию от параметров
 	double countF(const Element &point);
 private:
-	//Выдает испарения от месяца
-	double makeET(const int &month);
+	//Выдает испарения в данный момент
+	double makeET(const int &day, const int &month, const double &p) const;
 	//Считает разницу в днях между двумя датами в формате int[3] - день-месяц-год
 	int makeTheGap(const int *date1, const int *date2) const;
 	//Возвращает количество дней в месяце
@@ -71,7 +75,7 @@ private:
 	void readAndSetFormat(ifstream &fin, int &code, int &month, int &day, double &value);
 	//одна итерация записи в файл
 	void writeOutFormat(ofstream &fout, const int *date, const int &i, const int &begPoint, const double &value) const;
-	//Дает значение реальных данных в области определения и 0 вне
+	//Дает значение реальных данных в области определения и вне
 	double getRealData(const int &i) const;
 	//Инкремент даты
 	void incDate(int *date) const;
@@ -91,6 +95,8 @@ private:
 	int mCode;
 	//Разница между началом данных об осадках и началом данных о реальных данных
 	int mGap;
+	//Количество дней прогрева модели
+	int mHeatDays;
 	//Начало реальных данных и осадков
 	int mDatBeg[3], mPcpBeg[3]; //0 - day, 1 - month, 2 - year;
 	//Имя выходного файла
@@ -105,9 +111,14 @@ private:
 	double mPcpFormat;
 	//Размерность реальных данных
 	double mDatFormat;
-	//Размерноесть испарений
-	double mETFormat;
 	//Размерность выходных данных
 	double mOutFormat;
+	//Испаряемость
+	double mEtEE;
+	//Среднесуточное значение дефицита влажности
+	double mEtD;
+	//Даты связанные со снегом в формате: Выпадение снега: 0 - день, 1 - месяц; Сход снега: 2 - день, 3 - месяц;
+	//Две недели от снега: 4 - день, 5 - месяц
+	int mSnow[6];
 };
 

@@ -3,7 +3,7 @@
 #include "NelderMead.h"
 
 const double NelderMead::mAlpha = 1.0, NelderMead::mBetta = .5, NelderMead::mGamma = 2.0;
-const double NelderMead::mMax = 1e-15;
+const double NelderMead::mMax = 1e15;
 
 NelderMead::NelderMead(MlcmShell *modelSh) :
 	mModelSh(modelSh),

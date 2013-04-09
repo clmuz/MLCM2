@@ -47,7 +47,6 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	, mSaveSett(_T(""))
 	, mLoadSett(_T(""))
 	, mComboPcp(_T(""))
-	, mComboDeck(_T(""))
 	, mComboDat(_T(""))
 	, mEditPcp(_T(""))
 	, mEditDeck(_T(""))
@@ -65,6 +64,7 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	, mComboModAndVal(0)
 	, mModValFrom(COleDateTime::GetCurrentTime())
 	, mModValTo(COleDateTime::GetCurrentTime())
+	, mHeatDays(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	mIsDeck = 0;
@@ -116,6 +116,8 @@ void CMLCMDlg::loadConfig(char *configName)
 	mH->setFitnessType(fitnType, valType);
 	confin >> mOutFormat;
 	mH->setOutFormat(mOutFormat--);
+	confin >> mHeatDays;
+	mH->setHeatDays(mHeatDays);
 	double c1, c2;
 	confin >> c1 >> c2;
 	mH->setCLim(c1, c2);
@@ -166,6 +168,7 @@ void CMLCMDlg::saveConfig(char *configName)
 	mH->getCalAndFitnessTypes(calType, defFitnType, valType);
 	confout << calType << " " << defFitnType << " " << valType << endl;
 	confout << mH->getOutFormat() << endl;
+	confout << mH->getHeatDays() << endl;
 	int maxA[11], maxZ[10];
 	mH->getMaxAandZ(maxA, maxZ);
 	double c1, c2;
@@ -224,7 +227,6 @@ void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, Edit_SaveSett, mSaveSett);
 	DDX_Text(pDX, Edit_LoadSett, mLoadSett);
 	DDX_CBString(pDX, Combo_pcp, mComboPcp);
-	DDX_CBString(pDX, Combo_deck, mComboDeck);
 	DDX_CBString(pDX, Combo_dat, mComboDat);
 	DDX_Text(pDX, Edit_pcp, mEditPcp);
 	DDX_Text(pDX, Edit_deck, mEditDeck);
@@ -236,13 +238,13 @@ void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_DateTimeCtrl(pDX, Date_ModFrom, mModFrom);
 	DDX_DateTimeCtrl(pDX, Date_ModTo, mModTo);
 	DDX_CBIndex(pDX, Combo_OutFormat, mOutFormat);
-	DDV_MinMaxInt(pDX, mOutFormat, 0, 3);
 	DDX_Text(pDX, Edit_OutFile, mOutFile);
 	DDX_Text(pDX, Edit_SaveMlcm, mSaveMlcm);
 	DDX_Text(pDX, Edit_LoadMlcm, mLoadMlcm);
 	DDX_CBIndex(pDX, Combo_ModAndVal, mComboModAndVal);
 	DDX_DateTimeCtrl(pDX, Date_ModValFrom, mModValFrom);
 	DDX_DateTimeCtrl(pDX, Date_ModValTo, mModValTo);
+	DDX_Text(pDX, Edit_HeatDays, mHeatDays);
 }
 
 BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
@@ -270,6 +272,7 @@ BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
 	ON_BN_CLICKED(Button_Validate, &CMLCMDlg::OnBnClickedValidate)
 	ON_BN_CLICKED(Button_ModAndVal, &CMLCMDlg::OnBnClickedModandval)
 	ON_CBN_SELCHANGE(Combo_OutFormat, &CMLCMDlg::OnCbnSelchangeOutformat)
+	ON_EN_CHANGE(Edit_HeatDays, &CMLCMDlg::OnEnChangeHeatdays)
 END_MESSAGE_MAP()
 
 
@@ -393,6 +396,7 @@ void CMLCMDlg::OnBnClickedConfiginfo()
 	text += L"Через пробелы три значения - используемая калибровка (0 - Нелдер-Мид, 1 - расширенный Нелдер-Мид, 2 - SLS, 3 - перебор), ";
 	text += L"используемая целевая функция и функция для валидации (и для того, и для другого 0 - MSOF, 1 - среднеквадратическая ошибка)\n";
 	text += L"Формат выходных файлов (справку для форматов можете посмотреть в информации для выходных файлов)\n";
+	text += L"Количество дней прогрева модели\n";
 	text += L"Ограничение на скорость трансформации паводочной волны, через пробел, сверху и снизу (0-1)\n";
 	text += L"Данные об ограничениях на слои - первая строка ограничение на скорость поверхностного стекания (в мм/ч), ";
 	text += L"затем десять строк скорость через слой (мм/ч) и ширина слоя (мм) через пробел\n";
@@ -424,8 +428,11 @@ void CMLCMDlg::OnBnClickedDeckinfo()
 	CString text = L"Информация по файлу с данными о водосборе (*.deck)\n\n";
 	text += L"  Длина склона (в км)\n  Дискретность (шаг) по времени выхода модели ";
 	text += L"(в часах, нацело делит 24, то есть 7 часов не подойдет, а 6 или 0.5 подойдет)\n";
-	text += L"  Максимальное число ординат единичного гидрографа\n  12 строк со средними значениями испарений за месяц ";
-	text += L"(размерность указывается в комбобоксе справа от имени файла)\n\n";
+	text += L"  Максимальное число ординат единичного гидрографа\n";
+	text += L"  Cреднесуточное значений дефицита влажности, гПа и Испаряемость через пробел\n";
+	text += L"  Примерная ежегодная дата выпадения снега день и месяц через пробел\n";
+	text += L"  Примерная ежегодная дата схода снега день и месяц через пробел\n";
+	text += L"  (Предполагается, что снег выпадает до Нового Года, а сходит после)\n\n";
 	text += L"Внимание: при открытии нового файла deck рекомендуется перезагрузить файл с осадками";
 	mInfo->print(text);
 }
@@ -435,7 +442,9 @@ void CMLCMDlg::OnBnClickedInoutformatinfo()
 {
 	CString text = L"Информация по форматам входных и выходных данных\n\n";
 	text += L"1: Код - месяц - день - данные\n2: Месяц - день - данные\n3: Данные (началом считается 1 января 2013)\n4: (Только для выходных данных)\n";
-	text += L"   Месяц - день - осадки - реальные данные - смоделированные данные\n\n";
+	text += L"   Месяц - день - осадки - реальные данные - смоделированные данные\n";
+	text += L"5: (Только для выходных данных)\n";
+	text += L"   Месяц - день - осадки - испарения - реальные данные - смоделированные данные\n\n";
 	text += L"Месяц в формате первая одна-две цифры - номер месяца, вторые две - год, то есть 396 - март 1996, а 1201 - декабрь 2001\n";
 	text += L"Может оказаться, что во входных данных вместо дня стоит час. Не обязательно все переделывать, главное, чтобы в";
 	text += L" первой строчке правильно стоял номер дня в месяце";
@@ -460,6 +469,7 @@ void CMLCMDlg::OnBnClickedLoadsett()
 			printError(a);
 		}
 	}
+	UpdateData(0);
 }
 
 void CMLCMDlg::OnBnClickedSavesett()
@@ -531,8 +541,7 @@ void CMLCMDlg::OnBnClickeddeck()
 	char *deckChar;
 	if (doFileName(1, mEditDeck, &deckChar)) {
 		mIsDeck = 1;
-		double deckFormat = doComboFormats(mComboDeck);
-		mH->readDeck(deckFormat, deckChar);
+		mH->readDeck(deckChar);
 	}
 }
 
@@ -689,4 +698,10 @@ void CMLCMDlg::OnCbnSelchangeOutformat()
 {
 	UpdateData(1);
 	mH->setOutFormat(mOutFormat + 1);
+}
+
+void CMLCMDlg::OnEnChangeHeatdays()
+{
+	UpdateData(1);
+	mH->setHeatDays(mHeatDays);
 }

@@ -20,6 +20,10 @@ public:
 	void setParam(const Element &element);
 	//Установить осадки и испарения
 	void setPandET(vector<double> *P, vector<double> *ET);
+	//Установить количество шагов прогрева модели
+	void setHeatSteps(const int &countOfHeatSteps);
+	//Узнать количество шагов прогрева модели
+	int getHeatSteps() const;
 	//Запуск модели
 	vector<double> makeRunoff(const int &timeBeg, const int &timeEnd) const;
 	//Сколько раз запускалась MLCM с момента последнего клика
@@ -59,6 +63,8 @@ private:
 	int *mClick;
 	//Время за которое вода стечет по поверхности (в шагах)
 	int mTime0;
+	//Количество шагов прогрева модели
+	int mHeatSteps;
 	//Скорость трансформации паводочного слоя
 	double mC;
 	//etta и k - для подсчета ординат единичного гидрографа с помощью гамма функции

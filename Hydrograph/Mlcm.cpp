@@ -13,7 +13,8 @@ Mlcm::Mlcm() :
 	mK(2),
 	mEtta(2),
 	mT(0),
-	mAlpha0(100)
+	mAlpha0(100),
+	mHeatSteps(0)
 {
 	mClick = new int (0);
 	mTime = new double [10];
@@ -85,7 +86,8 @@ vector<double> Mlcm::makeRunoff(const int &timeBeg, const int &timeEnd) const
 	vector<double> state (mN + 1, 0);
 	vector<double> Qsum;
 	int i;
-	for (i = timeBeg; i < timeEnd; i++) {
+	int heatBeg = max (timeBeg - mHeatSteps, 0);
+	for (i = heatBeg; i < timeEnd; i++) {
 		Qsum.push_back(makeStep((*mP)[i], (*mET)[i], i, waterQueue, state));
 	}
 	vector<double> Q;
@@ -93,13 +95,13 @@ vector<double> Mlcm::makeRunoff(const int &timeBeg, const int &timeEnd) const
 	int a3 = max(timeBeg, a2);
 	int a4 = min(timeEnd, mRealEnd + 1);
 	for (i = timeBeg; i < a2; i++) {
-		Q.push_back(mC * countUhT(Qsum, i - timeBeg));
+		Q.push_back(mC * countUhT(Qsum, i - heatBeg));
 	}
 	for (i = a3; i < a4; i++) {
-		Q.push_back(mC * countUhT(Qsum, i - timeBeg) + (1 - mC) * (*mRealData)[i - 1 - mRealBeg]);
+		Q.push_back(mC * countUhT(Qsum, i - heatBeg) + (1 - mC) * (*mRealData)[i - 1 - mRealBeg]);
 	}
 	for (i = max(timeBeg, a4); i < timeEnd; i++) {
-		Q.push_back(mC * countUhT(Qsum, i - timeBeg));
+		Q.push_back(mC * countUhT(Qsum, i - heatBeg));
 	}
 	return Q;
 }
@@ -196,3 +198,14 @@ double Mlcm::countChannelWater(const int &time, queue<Water> *waterQueue, vector
 }
 
 Mlcm::Water::Water(const double &waterThikness, const int &newTime) : water(waterThikness), time(newTime) {}
+
+void Mlcm::setHeatSteps(const int &countOfHeatSteps)
+{
+	if (countOfHeatSteps >= 0)
+		mHeatSteps = countOfHeatSteps;
+}
+
+int Mlcm::getHeatSteps() const
+{
+	return mHeatSteps;
+}

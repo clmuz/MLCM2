@@ -5,7 +5,7 @@ const int Fitness::mMaxClassesNum = 2;
 
 Fitness::Fitness(Mlcm *model) :
 	mFitnessType(1),
-	mValType(1),
+	mValType(-1),
 	mModel(model)
 {
 	mCreatedClasses.resize(mMaxClassesNum + 1);

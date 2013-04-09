@@ -35,8 +35,10 @@ public:
 	void setSlsParam(const double &slsStep, const int &slsLim, const int &slsCalType);
 	double getMinGrowth() const;
 	void getCLim(double &c1, double &c2) const;
+	void setHeatDays(const int &countOfHeatDays);
+	int getHeatDays() const;
 	void setOutFile(char *outFileName);
-	void readDeck(const double &format, const char *filename);
+	void readDeck(const char *filename);
 	void readPcp(const double &format, const char *filename);
 	void readDat(const double &format, const char *filename);
 	int click();
