@@ -70,6 +70,8 @@ void ModelsShell::printPrediction(const int *begDate, const int *endDate)
 	if ((dayBeg < 1) || (dayEnd * mMeasPerDay > mP.size()))
 		throw(1);
 	ofstream rout(mOutput, ios::out);
+	if (!rout)
+		throw(3);
 	vector<double> res;
 	res = makeRunoff(dayBeg - 1, dayEnd);
 	rout.setf(ios::fixed, ios::floatfield);
@@ -102,6 +104,8 @@ double ModelsShell::printPrediction(const int *begDate, const int *endDate, cons
 		|| ((dayEnd - mGap - dayBeg + 1) * mMeasPerDay > mDat.size()))
 		throw(1);
 	ofstream rout(mOutput, ios::out);
+	if (!rout)
+		throw(3);
 	vector<double> res;
 	res = makeRunoff(dayBeg - 1, dayEnd);
 	rout.setf(ios::fixed, ios::floatfield);
@@ -225,30 +229,64 @@ int ModelsShell::getWarmingDays() const
 void ModelsShell::readDeck(const wchar_t *filename)
 {
 	ifstream deckIn (filename, ios::in);
+	if (!deckIn)
+		throw(3);
 	double Aslope, dt;
 	int nuh;
-	deckIn >> Aslope >> dt >> nuh;
-	mAslope = Aslope * 1000000;
-	mMlcm->setAslopeAndNuh(mAslope, nuh);
-	mMeasPerDay = 24.0 / dt;
-	if (deckIn >> mEtD >> mEtEE) {
-		for (int i = 0; i < 4; i++) {
-			deckIn >> mSnow[i];
-		}
-		int daysInLastSnowMonth = giveDaysInMonth(mSnow[3], 2013);
-		mSnow[4] = mSnow[2] + 14;
-		if (mSnow[4] > daysInLastSnowMonth) {
-			mSnow[4] = daysInLastSnowMonth;
-			mSnow[5] = mSnow[3] + 1;
-		}
-		else {
-			mSnow[5] = mSnow[3];
+	string str[8];
+	int i;
+	for (i = 0; i < 4; i++)
+		getline(deckIn, str[i]);
+	if (str[3] == "") {
+		Aslope = atof(str[0].c_str());
+		dt = atof(str[1].c_str());
+		nuh = atof(str[2].c_str());
+		mMeasPerDay = 24.0 / dt;
+		mEtD = 0;
+		mEtEE = 1;
+		for (int i = 0; i < 6; i++) {
+			mSnow[i] = 1;
 		}
 	}
 	else {
-		mEtD = 0;
-		mEtEE = 1;
+		for (i = 4; i <= 6; i++)
+			getline(deckIn, str[i]);
+		if (str[6] == "") {
+			Aslope = atof(str[0].c_str());
+			dt = atof(str[1].c_str());
+			nuh = atof(str[2].c_str());
+			mMeasPerDay = 24.0 / dt;
+			stringstream etParam (str[3]);
+			etParam >> mEtD >> mEtEE;
+			stringstream snow1 (str[4]), snow2 (str[5]);
+			snow1 >> mSnow[0] >> mSnow[1];
+			snow2 >> mSnow[2] >> mSnow[3];
+			int daysInLastSnowMonth = giveDaysInMonth(mSnow[3], 2013);
+			mSnow[4] = mSnow[2] + 14;
+			if (mSnow[4] > daysInLastSnowMonth) {
+				mSnow[4] = daysInLastSnowMonth;
+				mSnow[5] = mSnow[3] + 1;
+			}
+			else {
+				mSnow[5] = mSnow[3];
+			}
+		}
+		else {
+			getline(deckIn, str[7]);
+			if(str[7] == "")
+				throw(0);
+			stringstream dtstream (str[2]);
+			dtstream.seekg(53);
+			dtstream >> mMeasPerDay;
+			stringstream aslopeAndNuh (str[7]);
+			aslopeAndNuh.seekg(29);
+			aslopeAndNuh >> Aslope >> nuh;
+			mEtD = 0;
+			mEtEE = 1;
+		}
 	}
+	mAslope = Aslope * 1000;
+	mMlcm->setAslopeAndNuh(mAslope, nuh);
 	mFitness->setMeasPerDay(mMeasPerDay);
 	mMlcm->setWarmingSteps(mWarmingDays * mMeasPerDay);
 	deckIn.close();
@@ -331,6 +369,8 @@ void ModelsShell::readPcp(const double &format, const wchar_t *filename)
 {
 	mPcpFormat = format;
 	ifstream pcpIn (filename, ios::in);
+	if (!pcpIn)
+		throw(3);
 	int code, month, day;
 	double tmp;
 	readAndSetFormat(pcpIn, code, month, day, tmp);
@@ -379,6 +419,8 @@ void ModelsShell::readDat(const double &format, const wchar_t *filename)
 	mDatFormat = format;
 	mOutFormat = 1.0 / format;
 	ifstream datIn (filename, ios::in);
+	if (!datIn)
+		throw(3);
 	int code, month, day;
 	double tmp;
 	readAndSetFormat(datIn, code, month, day, tmp);

@@ -76,6 +76,8 @@ bool CMLCMDlg::doFileName(bool loadFile, CString &edit_str, const CString &forma
 void CMLCMDlg::loadConfig(const wchar_t *configName)
 {
 	ifstream confin(configName, ios::out);
+	if (!confin)
+		throw(3);
 	int calType, fitnType, valType;
 	confin >> calType >> fitnType >> valType;
 	mH->setCalibrationType(doCalibrationType(calType));
@@ -130,6 +132,8 @@ void CMLCMDlg::loadConfig(const wchar_t *configName)
 void CMLCMDlg::saveConfig(const wchar_t *configName)
 {
 	ofstream confout(configName, ios::out);
+	if (!confout)
+		throw(3);
 	calibrationType calType;
 	fitnessType defFitnType, valType;
 	mH->getCalAndFitnessTypes(calType, defFitnType, valType);
@@ -181,6 +185,9 @@ void CMLCMDlg::printError(const int &a)
 		break;
 	case 2:
 		text = L"Неправильный формат входного файла";
+		break;
+	case 3:
+		text = L"Ошибка открытия файла";
 		break;
 	default:
 		text = L"Что-то пошло не так :(";
@@ -394,9 +401,11 @@ void CMLCMDlg::OnBnClickedMlcminfo()
 void CMLCMDlg::OnBnClickedDeckinfo()
 {
 	CString text = L"Информация по файлу с данными о водосборе (*.deck)\n\n";
+	text += L"Кроме обычного формата существуют два кратких:\n\n";
 	text += L"  Длина склона (в км)\n  Дискретность (шаг) по времени выхода модели ";
 	text += L"(в часах, нацело делит 24, то есть 7 часов не подойдет, а 6 или 0.5 подойдет)\n";
 	text += L"  Максимальное число ординат единичного гидрографа\n";
+	text += L"Здесь файл может закончиться, тогда испарения считаются нулевыми\n";
 	text += L"  Cреднесуточное значений дефицита влажности, гПа и Испаряемость через пробел\n";
 	text += L"  Примерная ежегодная дата выпадения снега день и месяц через пробел\n";
 	text += L"  Примерная ежегодная дата схода снега день и месяц через пробел\n";

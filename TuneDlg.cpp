@@ -202,6 +202,8 @@ void TuneDlg::setNMKoeffs()
 		mH->setNMKoeffs(mNMKoeff1, mNMKoeff2);
 	if (mIsNMLoad) {
 		ifstream nmin((const wchar_t *) mNMLoad, ios::in);
+		if (!nmin)
+			throw(3);
 		int n;
 		nmin >> n;
 		double tmp;

@@ -263,6 +263,8 @@ int Mlcm::getN() const {
 void Mlcm::printParams(const wchar_t *outputParamFile) const
 {
 	ofstream fout(outputParamFile, ios::out);
+	if (!fout)
+		throw(3);
 	fout << mN << endl << mAlpha0 << endl << mC << endl << mK << endl << mEtta << endl << mT;
 	for (int i = 0; i < mN; i++)
 		fout << endl << mAlpha[i] << " " << mZ[i];
@@ -272,6 +274,8 @@ void Mlcm::printParams(const wchar_t *outputParamFile) const
 void Mlcm::loadParams(const wchar_t *inputParamFile)
 {
 	ifstream fin(inputParamFile, ios::in);
+	if (!fin)
+		throw(3);
 	fin >> mN >> mAlpha0 >> mC >> mK >> mEtta >> mT;
 	mNOrd = mNuh + ceil(mT);
 	if (mAlpha0 > mMin)
