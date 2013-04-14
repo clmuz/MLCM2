@@ -620,10 +620,18 @@ void CMLCMDlg::OnBnClickedValidate()
 
 void CMLCMDlg::OnBnClickedModel()
 {
-	if ((!mIsDeck) || (!mIsPcp) || (!mIsOutfile)) {
-		CString text = L"Загрузите сначала файл с данными о водосборе и файл с осадками и задайте выходной файл";
+	if ((!mIsDeck) || (!mIsPcp)) {
+		CString text = L"Загрузите сначала файл с данными о водосборе и файл с осадками";
 		mInfo->print(text);
 		return;
+	}
+	if (!mIsOutfile) {
+		if (doFileName(0, mOutFile, L".dat")) {
+			mIsOutfile = 1;
+			mH->setOutFile((const wchar_t *) mOutFile);
+		}
+		else
+			return;
 	}
 	int *modBegin = doDate(mModFrom);
 	int *modEnd = doDate(mModTo);
@@ -640,10 +648,18 @@ void CMLCMDlg::OnBnClickedModel()
 
 void CMLCMDlg::OnBnClickedModandval()
 {
-	if ((!mIsDeck) || (!mIsPcp) || (!mIsOutfile)) {
-		CString text = L"Загрузите сначала файл с данными о водосборе и файл с осадками и задайте выходной файл";
+	if ((!mIsDeck) || (!mIsPcp)) {
+		CString text = L"Загрузите сначала файл с данными о водосборе и файл с осадками";
 		mInfo->print(text);
 		return;
+	}
+	if (!mIsOutfile) {
+		if (doFileName(0, mOutFile, L".dat")) {
+			mIsOutfile = 1;
+			mH->setOutFile((const wchar_t *) mOutFile);
+		}
+		else
+			return;
 	}
 	int *modValBegin = doDate(mModValFrom);
 	int *modValEnd = doDate(mModValTo);
