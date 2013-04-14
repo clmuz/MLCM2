@@ -42,7 +42,12 @@ TuneDlg::~TuneDlg()
 void TuneDlg::setHydrograph(Hydrograph *H)
 {
 	mH = H;
-	mH->getCalAndFitnessTypes(mCalType, mFitnType, mValType);
+	calibrationType calType;
+	fitnessType fitnType, valType;
+	mH->getCalAndFitnessTypes(calType, fitnType, valType);
+	mCalType = (int) calType;
+	mFitnType = (int) fitnType;
+	mValType = (int) valType;
 	mH->getMaxAandZ(mMaxA, mMaxZ);
 	mH->getCLim(mMinC, mMaxC);
 	mH->getBruteforceParams(mBFStepsNum, mBFItNum);
@@ -52,9 +57,10 @@ void TuneDlg::setHydrograph(Hydrograph *H)
 	mNMKoeff1 = koeffs[0];
 	mNMKoeff2 = koeffs[1];
 	mH->getNMParams(mNMStop, mNMLim);
-	mH->getSlsParams(mSlsStep, mSlsLim, mSls0);
-	if (mSls0 > 1)
-		mSls0--;
+	calibrationType sls0;
+	mH->getSlsParams(mSlsStep, mSlsLim, sls0);
+	mSls0 = (int) sls0;
+	mSls0 -= (mSls0 > 1) ? 1 : 0;
 }
 
 void TuneDlg::DoDataExchange(CDataExchange* pDX)
@@ -109,28 +115,25 @@ BEGIN_MESSAGE_MAP(TuneDlg, CDialogEx)
 	ON_BN_CLICKED(Button_NMStopInfo, &TuneDlg::OnBnClickedNmstopinfo)
 	ON_BN_CLICKED(Button_LoadNMKoeffs, &TuneDlg::OnBnClickedLoadnmkoeffs)
 	ON_BN_CLICKED(IDOK, &TuneDlg::OnBnClickedOk)
+	ON_BN_CLICKED(Button_ClearNM, &TuneDlg::OnBnClickedClearnm)
 END_MESSAGE_MAP()
 
 
-bool TuneDlg::doFileName(bool loadFile, CString &edit_str, char **charName)
+bool TuneDlg::doFileName(bool loadFile, CString &edit_str, const CString &format)
 {
 	UpdateData(1);
-	if (edit_str == "") {
-		CFileDialog fileDlg(loadFile);
-		if (fileDlg.DoModal() == IDOK) {
-			edit_str = fileDlg.m_ofn.lpstrFile;
-			UpdateData(0);
-		}
-		else
-			return 0;
+	if (edit_str != L"")
+		return 1;
+	CString filters = L"txt (*.txt)|*.txt|Deck file (*.deck)|*.deck|Precipitation file (*.pcp)|*.pcp|";
+	filters += L"Real data (*.dat)|*.dat|Settings file (*.config)|*.config|MLCM parameters (*.param)|All Files (*.*)|*.*||";
+	CString format1 = L"*" + format;
+	CFileDialog fileDlg(loadFile, format, format1, 6UL, filters);
+	if (fileDlg.DoModal() == IDOK) {
+		edit_str = fileDlg.GetPathName();
+		UpdateData(0);
 	}
-	int size = edit_str.GetLength();
-	char *name = new char[size];
-	for (int i = 0; i < size; i++) {
-		name[i] = edit_str[i];
-	}
-	name[size] = 0;
-	*charName = name;
+	else
+		return 0;
 	return 1;
 }
 
@@ -161,7 +164,7 @@ void TuneDlg::OnBnClickedNmstopinfo()
 
 void TuneDlg::OnBnClickedLoadnmkoeffs()
 {
-	if (doFileName(1, mNMLoad, &mCharNMLoad)) {
+	if (doFileName(1, mNMLoad, L".nmparam")) {
 		mIsNMLoad = 1;
 	}
 }
@@ -189,8 +192,8 @@ void TuneDlg::saveMaxAandZ()
 
 void TuneDlg::setCalAndVal()
 {
-	mH->setCalibrationType(mCalType);
-	mH->setFitnessType(mFitnType, mValType);
+	mH->setCalibrationType(doCalibrationType(mCalType));
+	mH->setFitnessType(doFitnessType(mFitnType), doFitnessType(mValType));
 }
 
 void TuneDlg::setNMKoeffs()
@@ -198,7 +201,7 @@ void TuneDlg::setNMKoeffs()
 	if ((mNMKoeff1 > 0) && (mNMKoeff1 < 1) && (mNMKoeff2 > 0) && (mNMKoeff2 < 1))
 		mH->setNMKoeffs(mNMKoeff1, mNMKoeff2);
 	if (mIsNMLoad) {
-		ifstream nmin(mCharNMLoad, ios::in);
+		ifstream nmin((const wchar_t *) mNMLoad, ios::in);
 		int n;
 		nmin >> n;
 		double tmp;
@@ -222,8 +225,41 @@ void TuneDlg::OnBnClickedOk()
 	mH->setMinGrowth(mMinGrowth);
 	setNMKoeffs();
 	mH->setNMStopAndLim(mNMStop, mNMLim);
-	if (mSls0 > 1)
-		mSls0++;
-	mH->setSlsParam(mSlsStep, mSlsLim, mSls0);
+	mSls0 += (mSls0 > 1) ? 1 : 0;
+	mH->setSlsParam(mSlsStep, mSlsLim, doCalibrationType(mSls0));
 	CDialogEx::OnOK();
+}
+
+fitnessType TuneDlg::doFitnessType(const int &intFitn) const
+{
+	switch (intFitn) {
+	case 0:
+		return FT_MSOF;
+	case 1:
+		return FT_ASE;
+	default:
+		return FT_Default;
+	}
+}
+
+calibrationType TuneDlg::doCalibrationType(const int &intCal) const
+{
+	switch (intCal) {
+	case 0:
+		return CT_NelderMead;
+	case 1:
+		return CT_ComplexNelderMead;
+	case 2:
+		return CT_SLS;
+	case 3:
+		return CT_BruteForce;
+	default:
+		return CT_NULL;
+	}
+}
+
+void TuneDlg::OnBnClickedClearnm()
+{
+	mNMLoad = L"";
+	UpdateData(0);
 }

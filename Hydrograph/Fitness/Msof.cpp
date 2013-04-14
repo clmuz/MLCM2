@@ -4,8 +4,8 @@
 
 const double Msof::mLowerLim = 1e-7;
 
-Msof::Msof(Mlcm *model) :
-	mModel(model),
+Msof::Msof(ModelsShell *modShell) :
+	mShell(modShell),
 	mDayBeg(-1),
 	mDayEnd(-1)
 { }
@@ -21,7 +21,7 @@ void Msof::setBegEnd(const int &begDay, const int &endDay)
 double Msof::countError() const
 {
 	vector<double> modDaily, modMonthly, modVal;
-	modVal = mModel -> makeRunoff(mDayBeg * mMeasPerDay, (mDayEnd + 1) * mMeasPerDay);
+	modVal = mShell -> makeRunoff(mDayBeg, mDayEnd);
 	double sum;
 	unsigned int i, j;
 	for (i = 0; i <= mDayEnd - mDayBeg; i++) {

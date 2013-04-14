@@ -1,35 +1,23 @@
 #include "stdafx.h"
 #include "Calibration.h"
 
-Calibration::Calibration(const int &calibrationType, MlcmShell *MlcmSh)
+Calibration::Calibration(ModelsShell *modShell, Fitness *fitn) :
+	mShell(modShell),
+	mFitness(fitn)
 {
-	mCalType = calibrationType;
-	mMlcmSh = MlcmSh;
+	mCalType = CT_ComplexNelderMead;
 	mMinGrowth = 0.1;
-	mNM = new NelderMead(mMlcmSh);
-	mSLS = new SLS(mMlcmSh, this);
-	mBF = new BruteForce(mMlcmSh);
-}
-
-Calibration::Calibration(MlcmShell *MlcmSh)
-{
-	mMlcmSh = MlcmSh;
-	mCalType = 0;
-	mMinGrowth = 0.1;
-	mNM = new NelderMead(mMlcmSh);
-	mSLS = new SLS(mMlcmSh, this);
-	mBF = new BruteForce(mMlcmSh);
+	mNM = new NelderMead(mFitness);
+	mSLS = new SLS(mFitness, this);
+	mBF = new BruteForce(mFitness);
 }
 
 Calibration::~Calibration()
 {
-	delete mNM;
-	delete mSLS;
-	delete mBF;
-	delete mMlcmSh;
+	delete mNM, mSLS, mBF;
 }
 
-void Calibration::setCalibrationType(const int &calType)
+void Calibration::setCalibrationType(const calibrationType &calType)
 {
 	mCalType = calType;
 }
@@ -59,33 +47,46 @@ void Calibration::getBFParams(int &stepsNum, int &iterNum) const
 	mBF->getBFParams(stepsNum, iterNum);
 }
 
-void Calibration::setSlsParam(const double &slsStep, const int &slsLim, const int &slsCalType)
+void Calibration::setSlsParam(const double &slsStep, const int &slsLim, const calibrationType &slsCalType)
 {
 	mSLS->setParams(slsStep, slsLim, slsCalType);
 }
 
-void Calibration::getSlsParams(double &slsStep, int &slsLim, int &slsCalType) const
+void Calibration::getSlsParams(double &slsStep, int &slsLim, calibrationType &slsCalType) const
 {
 	mSLS->getParams(slsStep, slsLim, slsCalType);
 }
 
 double Calibration::doCalibration()
 {
-	Element nowElement, bestElement;
-	double best = doCalStep(0, bestElement);
+	double *nowParams, *bestParams;
+	int nowParamsNum = mShell->getModelParams(0);
+	bestParams = new double [nowParamsNum];
+	mShell->setModelIter(0);
+	int bestIter = 0;
+	double best = doCalStep(nowParamsNum, bestParams);
 	double now, prev;
-	for (int i = 1; i <= 10; i++) {
-		now = doCalStep(i, nowElement);
+	for (int i = 1; i < mShell->getIterNum(); i++) {
+		int nowParamsNum = mShell->getModelParams(i);
+		nowParams = new double [nowParamsNum];
+		mShell->setModelIter(i);
+		now = doCalStep(nowParamsNum, nowParams);
 		prev = best;
 		if (now < best) {
 			best = now;
-			bestElement = nowElement;
+			bestIter = i;
+			delete bestParams;
+			bestParams = new double [nowParamsNum];
+			for (int j = 0; j < nowParamsNum; j++)
+				bestParams[j] = nowParams[j];
 		}
 		if (prev - now < mMinGrowth) {
 			break;
 		}
 	}
-	mMlcmSh->changeModelParametrs(bestElement);
+	mShell->setModelIter(bestIter);
+	mShell->changeModelParametrs(bestParams);
+	delete[] bestParams, nowParams;
 	return best;
 }
 
@@ -94,24 +95,24 @@ void Calibration::setNMKoeffs(const double &koeff1, const double &koeff2)
 	mNM->setKoeffs(koeff1, koeff2);
 }
 
-double Calibration::doCalStep(const int &N, Element &nowElement, int calType)
+double Calibration::doCalStep(const int &paramsNum, double *bestParams, calibrationType calType)
 {
-	if (calType == -1)
+	if (calType == CT_NULL)
 		calType = mCalType;
 	switch (calType) {
-	case 0:
-		return mNM->doCalibration(N, nowElement);
-	case 1:
-		return mNM->doComplexCalibration(N, nowElement);
-	case 2:
-		return mSLS->doCalibration(N, nowElement);
-	case 3:
-		return mBF->calibrateLayer(N, nowElement);
+	case CT_NelderMead:
+		return mNM->doCalibration(paramsNum, bestParams);
+	case CT_ComplexNelderMead:
+		return mNM->doComplexCalibration(paramsNum, bestParams);
+	case CT_SLS:
+		return mSLS->doCalibration(paramsNum, bestParams);
+	case CT_BruteForce:
+		return mBF->doCalibration(paramsNum, bestParams);
 	}
-	return -1;
+	throw(0);
 }
 
-int Calibration::getCalType() const
+calibrationType Calibration::getCalType() const
 {
 	return mCalType;
 }

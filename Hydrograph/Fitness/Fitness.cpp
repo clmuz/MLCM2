@@ -3,12 +3,16 @@
 
 const int Fitness::mMaxClassesNum = 2;
 
-Fitness::Fitness(Mlcm *model) :
-	mFitnessType(1),
-	mValType(-1),
-	mModel(model)
+Fitness::Fitness(ModelsShell *modShell) :
+	mFitnessType(FT_ASE),
+	mValType(FT_ASE),
+	mShell(modShell)
 {
-	mCreatedClasses.resize(mMaxClassesNum + 1);
+	mCreatedClasses = new bool [mMaxClassesNum];
+	for (int i = 0; i < mMaxClassesNum; i++)
+		mCreatedClasses[i] = 0;
+	createFitnessFunction(mFitnessType);
+	createFitnessFunction(mValType);
 }
 
 Fitness::~Fitness()
@@ -25,36 +29,37 @@ Fitness::~Fitness()
 			}
 		}
 	}
+	delete mCreatedClasses;
 }
 
-void Fitness::createFitnessFunction(const int &fitnessType)
+void Fitness::createFitnessFunction(const fitnessType &fitnType)
 {
-	if (mCreatedClasses[fitnessType])
+	if (mCreatedClasses[fitnType])
 		return;
-	mCreatedClasses[fitnessType] = 1;
-	switch (fitnessType) {
-	case 0:
-		mMsof = new Msof (mModel);
+	mCreatedClasses[fitnType] = 1;
+	switch (fitnType) {
+	case FT_MSOF:
+		mMsof = new Msof (mShell);
 		mMsof->setMeasPerDay(mMeasPerDay);
 		mMsof->setRealVal(mRealVal, mGap);
 		break;
-	case 1:
-		mAse = new AbsoluteSquareError (mModel);
+	case FT_ASE:
+		mAse = new AbsoluteSquareError (mShell);
 		mAse->setMeasPerDay(mMeasPerDay);
 		mAse->setRealVal(mRealVal, mGap);
 		break;
 	}
 }
 
-void Fitness::setDefFitnessType(const int &fitnessType)
+void Fitness::setDefFitnessType(const fitnessType &fitnType)
 {
-	if (mFitnessType == fitnessType)
+	if (mFitnessType == fitnType)
 		return;
-	mFitnessType = fitnessType;
+	mFitnessType = fitnType;
 	createFitnessFunction(mFitnessType);
 }
 
-void Fitness::setValType(const int &valType)
+void Fitness::setValType(const fitnessType &valType)
 {
 	if (mValType == valType)
 		return;
@@ -65,69 +70,51 @@ void Fitness::setValType(const int &valType)
 double Fitness::getFitness() const
 {
 	switch (mFitnessType) {
-	case 0:
+	case FT_MSOF:
 		return mMsof->countError();
-	case 1:
+	case FT_ASE:
 		return mAse->countError();
 	}
-	return 0;
+	throw(0);
 }
 
-double Fitness::getFitness(const int &fitnessType)
+double Fitness::getFitness(const fitnessType &fitnType)
 {
-	if (!mCreatedClasses[fitnessType])
-		createFitnessFunction(fitnessType);
-	switch (fitnessType) {
-	case 0:
+	if (!mCreatedClasses[fitnType])
+		createFitnessFunction(fitnType);
+	switch (fitnType) {
+	case FT_MSOF:
 		return mMsof->countError();
-	case 1:
+	case FT_ASE:
 		return mAse->countError();
 	}
-	return 0;
-}
-
-double Fitness::getFitness(const int &fitnessType, const vector<double> &modVal)
-{
-	if (!mCreatedClasses[fitnessType])
-		createFitnessFunction(fitnessType);
-	switch (fitnessType) {
-	case 0:
-		return mMsof->countError(modVal);
-	case 1:
-		return mAse->countError(modVal);
-	}
-	return 0;
+	throw(0);
 }
 
 double Fitness::getValFitness() const
 {
 	switch (mValType) {
-	case 0:
+	case FT_MSOF:
 		return mMsof->countError();
-	case 1:
+	case FT_ASE:
 		return mAse->countError();
 	}
-	return 0;
+	throw(0);
 }
 
-double Fitness::getValFitness(const vector<double> &modVal) const
+double Fitness::getFitness(const double *params)
 {
-	switch (mValType) {
-	case 0:
-		return mMsof->countError(modVal);
-	case 1:
-		return mAse->countError(modVal);
-	}
-	return 0;
+	mShell->changeModelParametrs(params);
+	return getFitness();
 }
 
-void Fitness::setBegEnd(const unsigned int &begDay, const unsigned int &endDay)
+void Fitness::setBegEnd(const int &begDay, const int &endDay)
 {
 	if ((mDayBeg == begDay) && (mDayEnd == endDay))
 		return;
 	mDayBeg = begDay;
 	mDayEnd = endDay;
-	for (int i = 0; i <= mMaxClassesNum; i++) {
+	for (int i = 0; i < mMaxClassesNum; i++) {
 		if (mCreatedClasses[i]) {
 			switch (i) {
 			case 0:
@@ -141,7 +128,7 @@ void Fitness::setBegEnd(const unsigned int &begDay, const unsigned int &endDay)
 	}
 }
 
-void Fitness::getFitnessTypes(int &defType, int &valType) const
+void Fitness::getFitnessTypes(fitnessType &defType, fitnessType &valType) const
 {
 	defType = mFitnessType;
 	valType = mValType;

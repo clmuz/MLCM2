@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <fstream>
 #include <cmath>
 #include "Gamma.h"
 #include "Mlcm.h"
@@ -14,15 +15,30 @@ Mlcm::Mlcm() :
 	mEtta(2),
 	mT(0),
 	mAlpha0(100),
-	mHeatSteps(0)
+	mWarmingSteps(0),
+	mMinC(0.5),
+	mMaxC(1)
 {
 	mClick = new int (0);
 	mTime = new double [10];
+	mAlpha = new double [11];
+	mZ = new double [10];
+	mMaxA = new double [11];
+	int i;
+	for (i = 0; i < 11; i++) {
+		mAlpha[i] = 100;
+		mMaxA[i] = 100;
+	}
+	mMaxZ = new double [10];
+	for (i = 0; i < 10; i++) {
+		mZ[i] = 100;
+		mMaxZ[i] = 100;
+	}
 }
 
 Mlcm::~Mlcm()
 {
-	delete mClick;
+	delete mClick, mMaxA, mMaxZ, mTime, mAlpha, mZ;
 }
 
 void Mlcm::setAslopeAndNuh(const double &Aslope, const int &nuh)
@@ -33,36 +49,33 @@ void Mlcm::setAslopeAndNuh(const double &Aslope, const int &nuh)
 	makeHydrOrd();
 }
 
-void Mlcm::setParam(const Element &element)
+void Mlcm::setParam(const double *params)
 {
-	mN = element.getN();
-	mC = element.getC();
-	mK = element.getK();
-	mEtta = element.getEtta();
-	mT = element.getT();
+	mAlpha0 = mMaxA[0] * params[0];
+	mC = mMinC + (mMaxC - mMinC) * params[1];
+	mK = 1 + 19 * params[2];
+	mEtta = 1 + 4 * params[3];
+	mT = 24 * params[4];
 	mNOrd = mNuh + ceil(mT);
-	mAlpha0 = element.getAlpha0();
 	if (mAlpha0 > mMin)
 		mTime0 = ceil((double) mAslope / mAlpha0);
 	else 
 		mTime0 = 1000000;
-	mAlpha = element.getAlphas();
 	for (int i = 0; i < mN; i++) {
+		mAlpha[i] = mMaxA[i + 1] * params[5 + 2 * i];
 		if (mAlpha[i] > mMin)
 			mTime[i] = (double) mAslope / mAlpha[i];
 		else
 			mTime[i] = 1e10;
+		mZ[i] = mMaxZ[i] * params[6 + 2 * i];
 	}
-	mZ = element.getZ();
 	makeHydrOrd();
 }
 
 void Mlcm::setPandET(vector<double> *P, vector<double> *ET)
 {
 	mP = P;
-	mET = new vector<double>;
-	for (int i = 0; i < ET->size(); i++)
-		mET->push_back((*ET)[i]);
+	mET = ET;
 }
 
 void Mlcm::setRealData(vector<double> *realData, const int &realDatBeg)
@@ -86,8 +99,8 @@ vector<double> Mlcm::makeRunoff(const int &timeBeg, const int &timeEnd) const
 	vector<double> state (mN + 1, 0);
 	vector<double> Qsum;
 	int i;
-	int heatBeg = max (timeBeg - mHeatSteps, 0);
-	for (i = heatBeg; i < timeEnd; i++) {
+	int WarmingBeg = max (timeBeg - mWarmingSteps, 0);
+	for (i = WarmingBeg; i < timeEnd; i++) {
 		Qsum.push_back(makeStep((*mP)[i], (*mET)[i], i, waterQueue, state));
 	}
 	vector<double> Q;
@@ -95,21 +108,15 @@ vector<double> Mlcm::makeRunoff(const int &timeBeg, const int &timeEnd) const
 	int a3 = max(timeBeg, a2);
 	int a4 = min(timeEnd, mRealEnd + 1);
 	for (i = timeBeg; i < a2; i++) {
-		Q.push_back(mC * countUhT(Qsum, i - heatBeg));
+		Q.push_back(mC * countUhT(Qsum, i - WarmingBeg));
 	}
 	for (i = a3; i < a4; i++) {
-		Q.push_back(mC * countUhT(Qsum, i - heatBeg) + (1 - mC) * (*mRealData)[i - 1 - mRealBeg]);
+		Q.push_back(mC * countUhT(Qsum, i - WarmingBeg) + (1 - mC) * (*mRealData)[i - 1 - mRealBeg]);
 	}
 	for (i = max(timeBeg, a4); i < timeEnd; i++) {
-		Q.push_back(mC * countUhT(Qsum, i - heatBeg));
+		Q.push_back(mC * countUhT(Qsum, i - WarmingBeg));
 	}
 	return Q;
-}
-
-Element Mlcm::getParam() const
-{
-	Element nElement(mN, mAlpha0, mC, mK, mEtta, mT, mAlpha, mZ);
-	return nElement;
 }
 
 void Mlcm::makeHydrOrd()
@@ -199,13 +206,85 @@ double Mlcm::countChannelWater(const int &time, queue<Water> *waterQueue, vector
 
 Mlcm::Water::Water(const double &waterThikness, const int &newTime) : water(waterThikness), time(newTime) {}
 
-void Mlcm::setHeatSteps(const int &countOfHeatSteps)
+void Mlcm::setWarmingSteps(const int &countOfWarmingSteps)
 {
-	if (countOfHeatSteps >= 0)
-		mHeatSteps = countOfHeatSteps;
+	if (countOfWarmingSteps >= 0)
+		mWarmingSteps = countOfWarmingSteps;
 }
 
-int Mlcm::getHeatSteps() const
+int Mlcm::getWarmingSteps() const
 {
-	return mHeatSteps;
+	return mWarmingSteps;
+}
+
+void Mlcm::setMaxAandZ(const int *maxA, const int *maxZ)
+{
+	int i;
+	for (i = 0; i < 11; i++)
+		mMaxA[i] = maxA[i];
+	for (i = 0; i < 10; i++)
+		mMaxZ[i] = maxZ[i];
+}
+
+void Mlcm::setCLim(const double &minC, const double &maxC)
+{
+	if (minC > maxC)
+		return;
+	if ((minC >= 0) && (minC <= 1))
+		mMinC = minC;
+	if ((maxC >= 0) && (maxC <= 1))
+		mMaxC = maxC;
+}
+
+void Mlcm::getMaxAandZ(int *maxA, int *maxZ) const
+{
+	int i;
+	for (i = 0; i < 11; i++)
+		maxA[i] = mMaxA[i];
+	for (i = 0; i < 10; i++)
+		maxZ[i] = mMaxZ[i];
+}
+
+void Mlcm::getCLim(double &minC, double &maxC) const
+{
+	minC = mMinC;
+	maxC = mMaxC;
+}
+
+void Mlcm::setN(const int &n)
+{
+	mN = n;
+}
+
+int Mlcm::getN() const {
+	return mN;
+}
+
+void Mlcm::printParams(const wchar_t *outputParamFile) const
+{
+	ofstream fout(outputParamFile, ios::out);
+	fout << mN << endl << mAlpha0 << endl << mC << endl << mK << endl << mEtta << endl << mT;
+	for (int i = 0; i < mN; i++)
+		fout << endl << mAlpha[i] << " " << mZ[i];
+	fout.close();
+}
+
+void Mlcm::loadParams(const wchar_t *inputParamFile)
+{
+	ifstream fin(inputParamFile, ios::in);
+	fin >> mN >> mAlpha0 >> mC >> mK >> mEtta >> mT;
+	mNOrd = mNuh + ceil(mT);
+	if (mAlpha0 > mMin)
+		mTime0 = ceil((double) mAslope / mAlpha0);
+	else 
+		mTime0 = 1000000;
+	for (int i = 0; i < mN; i++) {
+		fin >> mAlpha[i] >> mZ[i];
+		if (mAlpha[i] > mMin)
+			mTime[i] = ceil((double) mAslope / mAlpha[i]);
+		else
+			mTime[i] = 1000000;
+	}
+	fin.close();
+
 }

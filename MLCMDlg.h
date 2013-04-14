@@ -28,17 +28,19 @@ protected:
 
 private:
 	//Загрузка настроек модели
-	void loadConfig(char *configName);
+	void loadConfig(const wchar_t *configName);
 	//Сохранение настроек
-	void saveConfig(char *configName);
+	void saveConfig(const wchar_t *configName);
 	//Функция, вызывающая окно Загрузить-сохранить и конвертирующая в нужный тип название файла
-	bool doFileName(bool loadFile, CString &edit_str, char **charName);
+	bool doFileName(bool loadFile, CString &edit_str, const CString &format);
 	//Функция, по комбобоксу выдающая размерность данных
 	double doComboFormats(const CString &combo);
 	//По дате выдающая дату в формате int[3] день - месяц - год
 	int *doDate(const COleDateTime &date);
 	//Обработчик эксепшенов
 	void printError(const int &a);
+	fitnessType doFitnessType(const int &intFitn) const;
+	calibrationType doCalibrationType(const int &intCal) const;
 	//Модель
 	Hydrograph *mH;
 	//Окно справки
@@ -72,7 +74,7 @@ private:
 	int mComboModAndVal;
 	COleDateTime mModValFrom;
 	COleDateTime mModValTo;
-	int mHeatDays;
+	int mWarmingDays;
 public:
 	afx_msg void OnBnClickedTune();
 	afx_msg void OnBnClickedMaininfo();
@@ -95,5 +97,13 @@ public:
 	afx_msg void OnBnClickedValidate();
 	afx_msg void OnBnClickedModandval();
 	afx_msg void OnCbnSelchangeOutformat();
-	afx_msg void OnEnChangeHeatdays();
+	afx_msg void OnEnChangeWarmingdays();
+	afx_msg void OnBnClickedClearsavesett();
+	afx_msg void OnBnClickedClearloadsett();
+	afx_msg void OnBnClickedCleardeck();
+	afx_msg void OnBnClickedClearpcp();
+	afx_msg void OnBnClickedCleardat();
+	afx_msg void OnBnClickedClearout();
+	afx_msg void OnBnClickedClearsavemlcm();
+	afx_msg void OnBnClickedClearloadmlcm();
 };

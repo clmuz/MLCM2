@@ -1,56 +1,53 @@
 #include "stdafx.h"
 #include "SLS.h"
 
-const double SLS::mMax = 1e15;
+const double SLS::mMax = 1e15, SLS::mMin = 1e-3;
 
-SLS::SLS(MlcmShell *modelSh, Calibration *cal) :
-	mModelSh(modelSh),
+SLS::SLS(Fitness *fitn, Calibration *cal) :
+	mFitness(fitn),
 	mCal(cal),
 	mStep(0.1),
 	mLim(0),
-	m0Type(0)
+	m0Type(CT_ComplexNelderMead)
 { }
 
-void SLS::setParams(const double &step, const int &lim, const int &cal0Type)
+void SLS::setParams(const double &step, const int &lim, const calibrationType &cal0Type)
 {
 	mStep = step;
 	mLim = lim;
-	if (cal0Type != 2)
+	if (cal0Type != CT_SLS)
 		m0Type = cal0Type;
 }
 
-void SLS::getParams(double &step, int &lim, int &cal0Type) const
+void SLS::getParams(double &step, int &lim, calibrationType &cal0Type) const
 {
 	step = mStep;
 	lim = mLim;
 	cal0Type = m0Type;
 }
 
-double SLS::doCalibration(const int &N, Element &bestElement)
+double SLS::doCalibration(const int &paramsNum, double *bestParams)
 {
 	double f;
-	f = mCal->doCalStep(N, bestElement, m0Type);
-	double *searchPoint = bestElement.toKoeffs();
+	f = mCal->doCalStep(paramsNum, bestParams, m0Type);
 	double fLeft, fRight;
-	int *paramCounter = new int [2 * N + 5];
-	int i, coordNum = 2 * N + 5;
+	int *paramCounter = new int [paramsNum];
+	int i;
 	int it = 0;
 	bool stop = 0;
-	Element now(N);
-	for (i = 0; i < coordNum; i++) {
+	for (i = 0; i < paramsNum; i++) {
 		paramCounter[i] = 0;
-		now.setCoord(searchPoint[i], i);
 	}
 	while ((!stop) && (it++ < mLim)) {
 		stop = 1;
-		for (i = 0; i < coordNum; i++) {
+		for (i = 0; i < paramsNum; i++) {
 			if (paramCounter[i]++ < 3) {
-				now.plus(-mStep, i);
-				fLeft = countF(now);
-				now.plus(2.0 * mStep, i);
-				fRight = countF(now);
+				bestParams[i] -= mStep;
+				fLeft = countF(bestParams, paramsNum);
+				bestParams[i] += 2.0 * mStep;
+				fRight = countF(bestParams, paramsNum);
 				if ((fLeft >= f) && (fRight >= f)) {
-					now.plus(-mStep, i);
+					bestParams[i] -= mStep;
 					continue;
 				}
 				stop = 0;
@@ -61,21 +58,25 @@ double SLS::doCalibration(const int &N, Element &bestElement)
 						continue;
 					}
 					f = fLeft;
-					now.plus(-2.0 * mStep, i);
+					bestParams[i] -= 2.0 * mStep;
 					continue;
 				}
 				f = fRight;
 			}
 		}
 	}
-	bestElement = now;
-	delete searchPoint, paramCounter;
+	delete[] paramCounter;
 	return f;
 }
 
-double SLS::countF(Element &point) const
+double SLS::countF(double *param, const int &paramsNum) const
 {
-	if (!point.checkPos())
+	int i;
+	for (i = 0; i < paramsNum; i++) {
+		if ((param[i] < mMin) || (param[i] > 1))
+			break;
+	}
+	if (i < paramsNum)
 		return mMax;
-	return mModelSh->countF(point);
+	return mFitness->getFitness(param);
 }

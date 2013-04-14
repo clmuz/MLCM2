@@ -3,8 +3,8 @@
 
 const double BruteForce::mMax = 1e15, BruteForce::mMin = 1e-2;
 
-BruteForce::BruteForce(MlcmShell *modelSh) :
-	mModelSh(modelSh),
+BruteForce::BruteForce(Fitness *fitn) :
+	mFitness(fitn),
 	mStepsNum(1),
 	mIterNum(1)
 { }
@@ -23,58 +23,61 @@ void BruteForce::getBFParams(int &stepsNum, int &iterNum) const
 	iterNum = mIterNum;
 }
 
-double BruteForce::calibrateLayer(const int &N, Element &best) const
+double BruteForce::doCalibration(const int &paramsNum, double *bestParams) const
 {
-	int coordNum = 2 * N + 5;
-	double *leftBorder = new double[coordNum];
+	double *leftBorder = new double[paramsNum];
 	int i, j;
-	for (i = 0; i < coordNum; i++)
+	for (i = 0; i < paramsNum; i++)
 		leftBorder[i] = 0;
 	double f = mMax, width = 1;
 	double halfStep = width / (2.0 * (mStepsNum + 1));
-	calibrateGap(N, f, leftBorder, width, best);
+	calibrateGap(paramsNum, f, leftBorder, width, bestParams);
 	for (i = 1; i < mIterNum; i++) {
-		delete leftBorder;
-		leftBorder = best.toKoeffs();
-		for (j = 0; j < coordNum; j++) {
-			leftBorder[j] = max(mMin, leftBorder[i] - halfStep);
+		for (j = 0; j < paramsNum; j++) {
+			leftBorder[j] = max(mMin, bestParams[j] - halfStep);
 		}
 		width = halfStep * 2.0;
-		calibrateGap(N, f, leftBorder, width, best);
+		calibrateGap(paramsNum, f, leftBorder, width, bestParams);
 	}
+	delete[] leftBorder;
 	return f;
 }
 
-void BruteForce::calibrateGap(const int &N, double &f, const double *leftBorder, const double &width, Element &best) const
+void BruteForce::calibrateGap(const int &paramsNum, double &f, const double *leftBorder, const double &width, double *bestParams) const
 {
 	double step = width / (mStepsNum + 1);
-	int coordNum = 2 * N + 5;
-	Element now(N);
-	for (int i = 0; i < coordNum; i++) {
-		now.setCoord(leftBorder[i], i);
+	double *now = new double [paramsNum];
+	for (int i = 0; i < paramsNum; i++) {
+		now[i] = leftBorder[i];
 	}
-	recursion(f, 0, coordNum, step, leftBorder, now, best);
+	recursion(f, 0, paramsNum, step, leftBorder, now, bestParams);
 }
 
 void BruteForce::recursion(double &f
 						   , const int &coord
-						   , const int &coordNum
+						   , const int &paramsNum
 						   , const double &step
 						   , const double *leftBorder
-						   , Element now
-						   , Element &best) const
+						   , const double *nowParams
+						   , double *bestParams) const
 {
-	if (coord == coordNum) {
-		double fNow = mModelSh->countF(now);
+	int i;
+	if (coord == paramsNum) {
+		double fNow = mFitness->getFitness(nowParams);
 		if (fNow < f) {
-			best = now;
+			for (i = 0; i < paramsNum; i++)
+				bestParams[i] = nowParams[i];
 			f = fNow;
 		}
 		return;
 	}
-	now.setCoord(leftBorder[coord], coord);
+	double *nowRecParams = new double [paramsNum];
+	for (i = 0; i < paramsNum; i++)
+		nowRecParams[i] = nowParams[i];
+	nowRecParams[coord] = leftBorder[coord];
 	for (int i = 0; i <= mStepsNum; i++) {
-		recursion(f, coord + 1, coordNum, step, leftBorder, now, best);
-		now.plus(step, coord);
+		recursion(f, coord + 1, paramsNum, step, leftBorder, nowRecParams, bestParams);
+		nowRecParams[coord] += step;
 	}
+	delete[] nowRecParams;
 }

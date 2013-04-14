@@ -22,17 +22,17 @@ protected:
 
 private:
 	//Функция, вызывающая окно Загрузить-сохранить и конвертирующая в нужный тип название файла
-	bool doFileName(bool loadFile, CString &edit_str, char **charName);
+	bool doFileName(bool loadFile, CString &edit_str, const CString &format);
 	//Сохранить ограничение на скорости через слой и ширины слоев
 	void saveMaxAandZ();
 	//Установить коэффициенты для Нелдера-Мида
 	void setNMKoeffs();
 	//Установить типы калибровки и целевых функций
 	void setCalAndVal();
+	fitnessType doFitnessType(const int &intFitn) const;
+	calibrationType doCalibrationType(const int &intCal) const;
 	//Модель
 	Hydrograph *mH;
-	//Имя файла с коэффициентами для Нелдера-Мида
-	char *mCharNMLoad;
 	//Загружен файл с коэффициентами для Нелдера-Мида
 	bool mIsNMLoad;
 	//Диалоговое окно информации
@@ -60,4 +60,6 @@ public:
 	afx_msg void OnBnClickedNmstopinfo();
 	afx_msg void OnBnClickedLoadnmkoeffs();
 	afx_msg void OnBnClickedOk();
+	afx_msg void OnBnClickedButton2();
+	afx_msg void OnBnClickedClearnm();
 };

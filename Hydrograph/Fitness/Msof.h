@@ -1,15 +1,17 @@
 #pragma once
 #include <vector>
-#include "..\Mlcm.h"
+#include "..\ModelsShell.h"
 
 //Целевая функция MSOF
 
 using namespace std;
 
+class ModelsShell;
+
 class Msof
 {
 public:
-	explicit Msof(Mlcm *model);
+	explicit Msof(ModelsShell *modShell);
 	//Установить начало и конец действия MSOF
 	void setBegEnd(const int &begDay, const int &endDay);
 	//Вернуть значение MSOF
@@ -42,5 +44,5 @@ private:
 	//нижний предел сигм
 	static const double mLowerLim;
 	//MLCM
-	Mlcm *mModel;
+	ModelsShell *mShell;
 };

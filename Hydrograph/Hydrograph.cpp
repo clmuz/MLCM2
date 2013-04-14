@@ -3,42 +3,44 @@
 
 Hydrograph::Hydrograph()
 {
-	mMlcmSh = new MlcmShell();
-	mCal = new Calibration(mMlcmSh);
+	mShell = new ModelsShell();
+	mFitness = new Fitness(mShell);
+	mShell->setFitnessClass(mFitness);
+	mCal = new Calibration(mShell, mFitness);
 }
 
 Hydrograph::~Hydrograph()
 {
-	delete mCal;
+	delete mCal, mFitness, mShell;
 }
 
-void Hydrograph::setCalibrationType(const int &calType)
+void Hydrograph::setCalibrationType(const calibrationType &calType)
 {
 	mCal->setCalibrationType(calType);
 }
 
-void Hydrograph::setFitnessType(const int &fitnDefType, const int &valType)
+void Hydrograph::setFitnessType(const fitnessType fitnDefType, const fitnessType valType)
 {
-	mMlcmSh->setDefFitnessType(fitnDefType);
-	mMlcmSh->setValType(valType);
+	mFitness->setDefFitnessType(fitnDefType);
+	mFitness->setValType(valType);
 }
 
-void Hydrograph::setOutFormat(const int &outFormat)
+void Hydrograph::setOutFormat(const int outFormat)
 {
-	mMlcmSh->setOutFormat(outFormat);
+	mShell->setOutFormat(outFormat);
 }
 
 void Hydrograph::setMaxAandZ(const int *maxA, const int *maxZ)
 {
-	mMlcmSh->setMaxAandZ(maxA, maxZ);
+	mShell->setMaxAandZ(maxA, maxZ);
 }
 
-void Hydrograph::setNMStopAndLim(const double &NMStop, const int &NMLim)
+void Hydrograph::setNMStopAndLim(const double NMStop, const int NMLim)
 {
 	mCal->setNMStopAndLim(NMStop, NMLim);
 }
 
-void Hydrograph::setNMKoeffs(const double &koeff1, const double &koeff2)
+void Hydrograph::setNMKoeffs(const double koeff1, const double koeff2)
 {
 	mCal->setNMKoeffs(koeff1, koeff2);
 }
@@ -53,68 +55,68 @@ void Hydrograph::setMinGrowth(const double minGrowth)
 	mCal->setMinGrowth(minGrowth);
 }
 
-void Hydrograph::setCLim(const double &c1, const double &c2)
+void Hydrograph::setCLim(const double minC, const double maxC)
 {
-	mMlcmSh->setCLim(c1, c2);
+	mShell->setCLim(minC, maxC);
 }
 
-void Hydrograph::getCLim(double &c1, double &c2) const
+void Hydrograph::getCLim(double &minC, double &maxC) const
 {
-	mMlcmSh->getCLim(c1, c2);
+	mShell->getCLim(minC, maxC);
 }
 
-void Hydrograph::setBruteforceParams(const int &steps, const int &it)
+void Hydrograph::setBruteforceParams(const int steps, const int it)
 {
 	mCal->setBFParams(steps, it);
 }
 
-void Hydrograph::loadMlcm(const char *paramFile)
+void Hydrograph::loadMlcm(const wchar_t *paramFile)
 {
-	mMlcmSh->loadParametrs(paramFile);
+	mShell->loadParams(paramFile);
 }
 
-void Hydrograph::printMlcm(const char *outputParamFile)
+void Hydrograph::printMlcm(const wchar_t *outputParamFile)
 {
-	mMlcmSh->printParams(outputParamFile);
+	mShell->printParams(outputParamFile);
 }
 
 void Hydrograph::printPrediction(const int *begDate, const int *endDate)
 {
-	mMlcmSh->printPrediction(begDate, endDate);
+	mShell->printPrediction(begDate, endDate);
 }
 
-double Hydrograph::printPredAndValid(const int *begDate, const int *endDate, const int &fitnessType)
+double Hydrograph::printPredAndValid(const int *begDate, const int *endDate, const fitnessType fitnessType)
 {
-	mMlcmSh->setFitnessBegEnd(begDate, endDate);
-	return mMlcmSh->printPrediction(begDate, endDate, fitnessType);
+	mShell->setFitnessBegEnd(begDate, endDate);
+	return mShell->printPrediction(begDate, endDate, fitnessType);
 }
 
 double Hydrograph::calibrate(const int *begDate, const int *endDate)
 {
-	mMlcmSh->setFitnessBegEnd(begDate, endDate);
+	mShell->setFitnessBegEnd(begDate, endDate);
 	return mCal->doCalibration();
 }
 
 double Hydrograph::validate(const int *begDate, const int *endDate)
 {
-	mMlcmSh->setFitnessBegEnd(begDate, endDate);
-	return mMlcmSh->getValFitness();
+	mShell->setFitnessBegEnd(begDate, endDate);
+	return mFitness->getValFitness();
 }
 
-void Hydrograph::getCalAndFitnessTypes(int &calType, int &defFitnType, int &valType) const
+void Hydrograph::getCalAndFitnessTypes(calibrationType &calType, fitnessType &defFitnType, fitnessType &valType) const
 {
 	calType = mCal->getCalType();
-	mMlcmSh->getFitnessTypes(defFitnType, valType);
+	mFitness->getFitnessTypes(defFitnType, valType);
 }
 
 int Hydrograph::getOutFormat() const
 {
-	return mMlcmSh->getOutFormat();
+	return mShell->getOutFormat();
 }
 
 void Hydrograph::getMaxAandZ(int *maxA, int *maxZ) const
 {
-	mMlcmSh->getMaxAandZ(maxA, maxZ);
+	mShell->getMaxAandZ(maxA, maxZ);
 }
 
 void Hydrograph::getBruteforceParams(int &steps, int &iter) const
@@ -132,12 +134,12 @@ int Hydrograph::getNMKoeffs(std::vector<double> &koeffs) const
 	return mCal->getNMKoeffs(koeffs);
 }
 
-void Hydrograph::getSlsParams(double &slsStep, int &slsLim, int &slsCalType) const
+void Hydrograph::getSlsParams(double &slsStep, int &slsLim, calibrationType &slsCalType) const
 {
 	mCal->getSlsParams(slsStep, slsLim, slsCalType);
 }
 
-void Hydrograph::setSlsParam(const double &slsStep, const int &slsLim, const int &slsCalType)
+void Hydrograph::setSlsParam(const double slsStep, const int slsLim, const calibrationType slsCalType)
 {
 	mCal->setSlsParam(slsStep, slsLim, slsCalType);
 }
@@ -147,37 +149,37 @@ double Hydrograph::getMinGrowth() const
 	return mCal->getMinGrowth();
 }
 
-void Hydrograph::setOutFile(char *outFileName)
+void Hydrograph::setOutFile(const wchar_t *outFileName)
 {
-	mMlcmSh->setOutFile(outFileName);
+	mShell->setOutFile(outFileName);
 }
 
-void Hydrograph::readDeck(const char *filename)
+void Hydrograph::readDeck(const wchar_t *filename)
 {
-	mMlcmSh->readDeck(filename);
+	mShell->readDeck(filename);
 }
 
-void Hydrograph::readPcp(const double &format, const char *filename)
+void Hydrograph::readPcp(const double format, const wchar_t *filename)
 {
-	mMlcmSh->readPcp(format, filename);
+	mShell->readPcp(format, filename);
 }
 
-void Hydrograph::readDat(const double &format, const char *filename)
+void Hydrograph::readDat(const double format, const wchar_t *filename)
 {
-	mMlcmSh->readDat(format, filename);
+	mShell->readDat(format, filename);
 }
 
 int Hydrograph::click()
 {
-	return mMlcmSh->click();
+	return mShell->click();
 }
 
-void Hydrograph::setHeatDays(const int &countOfHeatDays)
+void Hydrograph::setWarmingDays(const int countOfWarmingDays)
 {
-	mMlcmSh->setHeatDays(countOfHeatDays);
+	mShell->setWarmingDays(countOfWarmingDays);
 }
 
-int Hydrograph::getHeatDays() const
+int Hydrograph::getWarmingDays() const
 {
-	return mMlcmSh->getHeatDays();
+	return mShell->getWarmingDays();
 }

@@ -3,11 +3,11 @@
 #include "NelderMead.h"
 
 const double NelderMead::mAlpha = 1.0, NelderMead::mBetta = .5, NelderMead::mGamma = 2.0;
-const double NelderMead::mMax = 1e15;
+const double NelderMead::mMax = 1e15, NelderMead::mMin = 1e-3;
 
-NelderMead::NelderMead(MlcmShell *modelSh) :
-	mModelSh(modelSh),
-	mN(0),
+NelderMead::NelderMead(Fitness *fitn) :
+	mFitness(fitn),
+	mParamsNum(0),
 	mE(0.1),
 	mLimit(1000),
 	mComplexNum(1),
@@ -27,136 +27,154 @@ void NelderMead::setNMStopAndLim(const double &NMStop, const int &NMLim)
 		mLimit = NMLim;
 }
 
-double NelderMead::doNelderMead(Element &nowElement, vector<Element*> &elements) const
+double NelderMead::doNelderMead(double *bestParams, vector<double*> &simplex) const
 {
 	int it = 0;
-	vector<double> Fs;
-	for (int i = 0; i < mSimplexN; i++)
-		Fs.push_back(countF(*elements[i]));
+	double *Fs = new double [mParamsNum + 1];
+	double *centre = new double [mParamsNum];
+	double *expans = new double [mParamsNum];
+	double *contr = new double [mParamsNum];
+	double *refl = new double [mParamsNum];
+	double fl, fg, fh, fr, fc, fe;
+	int i, j, l, g, h;
+	for (i = 0; i <= mParamsNum; i++)
+		Fs[i] = (countF(simplex[i]));
 	while ((!isLim(Fs)) && (it++ < mLimit)) {
 		//Sort
-		double fl = mMax, fg, fh;
-		int i, l = 0, g = 1, h = 2;
-		for (i = 0; i < mSimplexN; i++)
+		fl = mMax;
+		l = 0;
+		g = 1;
+		h = 2;
+		for (i = 0; i <= mParamsNum; i++)
 			if (Fs[i] < fl) {
 				fl = Fs[i];
 				l = i;
 			}
-		swap(l, 0, elements, Fs);
+		swap(l, 0, simplex, Fs);
 		fh = fl;
-		for (i = 1; i < mSimplexN; i++)
+		for (i = 1; i <= mParamsNum; i++)
 			if (Fs[i] > fh) {
 				fh = Fs[i];
 				h = i;
 			}
-		swap(h, mSimplexN - 1, elements, Fs);
+		swap(h, mParamsNum, simplex, Fs);
 		fg = fl;
-		for (i = 1; i < mSimplexN - 1; i++)
+		for (i = 1; i < mParamsNum; i++)
 			if ((Fs[i] > fg) && (Fs[i] < fh)) {
 				fg = Fs[i];
 				g = i;
 			}
-		swap(g, mSimplexN - 2, elements, Fs);
+		swap(g, mParamsNum - 1, simplex, Fs);
 		//Mass centre
-		Element centre (mN);
-		for (i = 0; i < mSimplexN - 1; i++)
-			centre += *elements[i];
-		centre *= (1.0 / (mSimplexN - 1));
+		for (j = 0; j < mParamsNum; j++)
+			centre[j] = 0;
+		for (i = 0; i < mParamsNum; i++) {
+			for (j = 0; j < mParamsNum; j++) {
+				centre[j] += (simplex[i][j]) / (double) mParamsNum;
+			}
+		}
 		//Reflection
-		Element refl (mN);
-		refl = centre * (1.0 + mAlpha) - *elements[mSimplexN - 1] * mAlpha;
-		double fr = countF(refl);
+		for (j = 0; j < mParamsNum; j++)
+			refl[j] = centre[j] * (1.0 + mAlpha) - simplex[mParamsNum][j] * mAlpha;
+		fr = countF(refl);
 		if (fr < fl) {
 			//Expansion
-			Element expans (mN);
-			expans = centre * (1.0 - mGamma) - refl * mGamma;
-			double fe = countF(expans);
+			for (j = 0; j < mParamsNum; j++)
+				expans[j] = centre[j] * (1.0 - mGamma) - refl[j] * mGamma;
+			fe = countF(expans);
 			if (fe < fl) {
-				*elements[mSimplexN - 1] = expans;
-				Fs[mSimplexN - 1] = fe;
+				doEqual(simplex[mParamsNum], expans, mParamsNum);
+				Fs[mParamsNum] = fe;
 			}
 			else
 			{
-				*elements[mSimplexN - 1] = refl;
-				Fs[mSimplexN - 1] = fr;
+				doEqual(simplex[mParamsNum], refl, mParamsNum);
+				Fs[mParamsNum] = fr;
 			}
 		}
 		else {
 			if (fr < fg) {
-				*elements[mSimplexN - 1] = refl;
-				Fs[mSimplexN - 1] = fr;
+				doEqual(simplex[mParamsNum], refl, mParamsNum);
+				Fs[mParamsNum] = fr;
 			}
 			else {
 				//Contraction
 				if (fr < fh) {
-					*elements[mSimplexN - 1] = refl;
-					Fs[mSimplexN - 1] = fr;
+					doEqual(simplex[mParamsNum], refl, mParamsNum);
+					Fs[mParamsNum] = fr;
 					fh = fr;
 				}
-				Element contr (mN);
-				contr = *elements[mSimplexN - 1] * mBetta + centre * (1.0 - mBetta);
-				double fs = countF (contr);
-				if (fs < fh) {
-					*elements[mSimplexN - 1] = contr;
-					Fs[mSimplexN - 1] = fs;
+				for (j = 0; j < mParamsNum; j++)
+					contr[j] = simplex[mParamsNum][j] * mBetta + centre[j] * (1.0 - mBetta);
+				fc = countF (contr);
+				if (fc < fh) {
+					doEqual(simplex[mParamsNum], contr, mParamsNum);
+					Fs[mParamsNum] = fc;
 				}
 				else {
-					for (i = 1; i < mSimplexN; i++) {
-						*elements[i] = *elements[0] + (*elements[i] - *elements[0]) * 0.5;
-						Fs[i] = countF(*elements[i]);
+					for (i = 1; i <= mParamsNum; i++) {
+						for (j = 0; j < mParamsNum; j++)
+							simplex[i][j] = simplex[0][j] + (simplex[i][j] - simplex[0][j]) * 0.5;
+						Fs[i] = countF(simplex[i]);
 					}
 				}
 			}
 		}
 	}
-	double fl = mMax;
-	int l = 0;
-	for (int i = 0; i < mSimplexN; i++)
+	fl = mMax;
+	l = 0;
+	for (i = 0; i <= mParamsNum; i++) {
 		if (Fs[i] < fl) {
 			fl = Fs[i];
 			l = i;
 		}
-	nowElement = *elements[l];
+	}
+	for (i = 0; i < mParamsNum; i++)
+		bestParams[i] = simplex[l][i];
+	delete[] centre, expans, contr, refl, Fs;
 	return fl;
 }
 
-double NelderMead::doCalibration(const int &N, Element &nowElement)
+double NelderMead::doCalibration(const int &paramsNum, double *nowParams)
 {
-	mN = N;
-	mSimplexN = mN * 2 + 6;
-	vector<Element*> elements (mSimplexN);
-	for (int i = 0; i < mSimplexN; i++)
-		elements[i] = new Element(mN);
-	doFirstSimplex(mKoeff1, mKoeff2, elements);
-	double f = doNelderMead(nowElement, elements);
-	for (int i = 0; i < mSimplexN; i++)
-		delete elements[i];
+	mParamsNum = paramsNum;
+	vector<double*> simplex (mParamsNum + 1);
+	for (int i = 0; i <= mParamsNum; i++)
+		simplex[i] = new double [mParamsNum];
+	doFirstSimplex(mKoeff1, mKoeff2, simplex);
+	double f = doNelderMead(nowParams, simplex);
+	for (int i = 0; i <= mParamsNum; i++)
+		delete[] simplex[i];
 	return f;
 }
 
-double NelderMead::doComplexCalibration(const int &N, Element &nowElement)
+double NelderMead::doComplexCalibration(const int &paramsNum, double *nowParams)
 {
-	mN = N;
-	mSimplexN = mN * 2 + 6;
-	Element nowE, bestE;
+	mParamsNum = paramsNum;
+	double *nowPar = new double [mParamsNum], *bestPar = new double [mParamsNum];
 	double now, best;
-	vector<Element*> elements (mSimplexN);
-	for (int i = 0; i < mSimplexN; i++)
-		elements[i] = new Element(mN);
-	doFirstSimplex(mKoeffs[0], mKoeffs[1], elements);
-	best = doNelderMead(nowE, elements);
-	bestE = nowE;
-	for (int i = 1; i < mComplexNum; i++) {
-		doFirstSimplex(mKoeffs[2 * i], mKoeffs[2 * i + 1], elements);
-		now = doNelderMead(nowE, elements);
+	vector<double*> simplex (mParamsNum + 1);
+	int i, j;
+	for (i = 0; i <= mParamsNum; i++)
+		simplex[i] = new double [mParamsNum];
+	doFirstSimplex(mKoeffs[0], mKoeffs[1], simplex);
+	best = doNelderMead(nowPar, simplex);
+	for (j = 0; j < mParamsNum; j++)
+		bestPar[j] = nowPar[j];
+	for (i = 1; i < mComplexNum; i++) {
+		doFirstSimplex(mKoeffs[2 * i], mKoeffs[2 * i + 1], simplex);
+		now = doNelderMead(nowPar, simplex);
 		if (now < best) {
 			best = now;
-			bestE = nowE;
+			for (j = 0; j < mParamsNum; j++)
+				bestPar[j] = nowPar[j];
 		}
 	}
-	for (int i = 0; i < mSimplexN; i++)
-		delete elements[i];
-	nowElement = bestE;
+	for (i = 0; i <= mParamsNum; i++)
+		delete[] simplex[i];
+	for (i = 0; i < mParamsNum; i++)
+		nowParams[i] = bestPar[i];
+	delete[] nowPar, bestPar;
 	return best;
 }
 
@@ -176,54 +194,59 @@ void NelderMead::setKoeffs(const vector<double> &koeffs)
 	}
 }
 
-void NelderMead::doFirstSimplex(const double &koeff1, const double &koeff2, vector<Element*> &elements) const
+void NelderMead::doFirstSimplex(const double &koeff1, const double &koeff2, vector<double*> &simplex) const
 {
 	int i, j;
-	for (j = 0; j < 2 * mN + 5; j++) {
-		elements[0]->setCoord(koeff1, j);
+	for (j = 0; j < mParamsNum; j++) {
+		simplex[0][j] = koeff1;
 	}
-	for (i = 1; i < mSimplexN; i++) {
-		for (j = 0; j < 2 * mN + 5; j++) {
-			elements[i]->setCoord(koeff1, j);
+	for (i = 1; i <= mParamsNum; i++) {
+		for (j = 0; j < mParamsNum; j++) {
+			simplex[i][j] = koeff1;
 		}
-		elements[i]->setCoord(koeff2, i - 1);
+		simplex[i][i - 1] = koeff2;
 	}
 }
 
-double NelderMead::countF(const Element &point) const
+double NelderMead::countF(const double *param) const
 {
-	if (!point.checkPos())
+	int i;
+	for (i = 0; i < mParamsNum; i++) {
+		if ((param[i] < mMin) || (param[i] > 1))
+			break;
+	}
+	if (i < mParamsNum)
 		return mMax;
-	return mModelSh->countF(point);
+	return mFitness->getFitness(param);
 }
 
-bool NelderMead::isLim(const vector<double> &Fs) const
+bool NelderMead::isLim(const double *Fs) const
 {
 	int i;
 	double f = 0;
-	for (i = 0; i < mSimplexN; i++)
+	for (i = 0; i <= mParamsNum; i++)
 		f += Fs[i];
-	f /= mSimplexN;
+	f /= mParamsNum + 1;
 	double sigma = 0;
-	for (i = 0; i < mSimplexN; i++)
+	for (i = 0; i <= mParamsNum; i++)
 		sigma += pow (Fs[i] - f, 2);
-	sigma /= mSimplexN;
+	sigma /= mParamsNum + 1;
 	sigma = sqrt(sigma);
 	if (sigma < mE)
 		return 1;
 	return 0;
 }
 
-void NelderMead::swap(const int &i, const int &j, vector<Element*> &elements, vector<double> &Fs) const
+void NelderMead::swap(const int &i, const int &j, vector<double*> &simplex, double *Fs) const
 {
 	if (i == j)
 		return;
 	double tmpF = Fs[i];
-	Element *tmpE = elements[i];
+	double *tmpParam = simplex[i];
 	Fs[i] = Fs[j];
-	elements[i] = elements[j];
+	simplex[i] = simplex[j];
 	Fs[j] = tmpF;
-	elements[j] = tmpE;
+	simplex[j] = tmpParam;
 }
 
 void NelderMead::getNMParams(double &stop, int &iter) const
@@ -232,7 +255,7 @@ void NelderMead::getNMParams(double &stop, int &iter) const
 	iter = mLimit;
 }
 
-int NelderMead::getNMKoeffs(std::vector<double> &koeffs) const
+int NelderMead::getNMKoeffs(vector<double> &koeffs) const
 {
 	koeffs.clear();
 	koeffs.push_back(mKoeff1);
@@ -241,4 +264,10 @@ int NelderMead::getNMKoeffs(std::vector<double> &koeffs) const
 		koeffs.push_back(mKoeffs[i]);
 	}
 	return mComplexNum;
+}
+
+void NelderMead::doEqual(double *a, const double *b, const int &arraySize) const
+{
+	for (int i = 0; i < arraySize; i++)
+		a[i] = b[i];
 }

@@ -1,5 +1,6 @@
 #pragma once
-#include "..\MlcmShell.h"
+#include "..\Fitness\Fitness.h"
+#include "..\ModelsShell.h"
 #include "NelderMead.h"
 #include "SLS.h"
 #include "BruteForce.h"
@@ -10,18 +11,26 @@
 
 class SLS;
 
+enum calibrationType
+{
+	CT_NULL = -1,
+	CT_NelderMead,
+	CT_ComplexNelderMead,
+	CT_SLS,
+	CT_BruteForce
+};
+
 class Calibration
 {
 public:
-	Calibration(const int &calibrationType, MlcmShell *MlcmSh);
-	explicit Calibration(MlcmShell *MlcmSh);
+	Calibration(ModelsShell *modShell, Fitness *fitn);
 	~Calibration();
 	//Выполнить калибровку
 	double doCalibration();
 	//Посчитать калибровку для N слоев, с типом калибровки calType
-	double doCalStep(const int &N, Element &bestElement, int calType = -1);
+	double doCalStep(const int &paramNum, double *bestParams, calibrationType calType = CT_NULL);
 	//Установить тип калибровки
-	void setCalibrationType(const int &calType);
+	void setCalibrationType(const calibrationType &calType);
 	//Установить условие останова и лимит на количество итераций в Нелдере-Миде
 	void setNMStopAndLim(const double &NMStop, const int &NMLim);
 	//Установить коэффициенты симплекса для одиносимплексого Нелдера-Мида
@@ -31,13 +40,13 @@ public:
 	//Установить количество шагов и итераций в переборе
 	void setBFParams(const int &stepsNum, const int &iterNum);
 	//Установить шаг, лимит на количество итераций и тип предварительной калибровки для SLS
-	void setSlsParam(const double &slsStep, const int &slsLim, const int &slsCalType);
+	void setSlsParam(const double &slsStep, const int &slsLim, const calibrationType &slsCalType);
 	//Узнать шаг, лимит на количество итераций и тип предварительной калибровки для SLS
-	void getSlsParams(double &slsStep, int &slsLim, int &slsCalType) const;
+	void getSlsParams(double &slsStep, int &slsLim, calibrationType &slsCalType) const;
 	//Установить минимальный прирост от предыдущего слоя к новому
 	void setMinGrowth(const double &minGrowth);
 	//Узнать тип калибровки
-	int getCalType() const;
+	 calibrationType getCalType() const;
 	//Узнать условие останова и лимит на количество итераций в Нелдере-Миде
 	void getNMParams(double &stop, int &iter) const;
 	//Узнать коэффициенты симплексов в Нелдере-Миде
@@ -48,10 +57,11 @@ public:
 	void getBFParams(int &stepsNum, int &iterNum) const;
 private:
 	//Тип калибровки
-	int mCalType;
+	 calibrationType mCalType;
 	//Минимальный прирост от предыдущего слоя к новому
 	double mMinGrowth;
-	MlcmShell *mMlcmSh;
+	ModelsShell *mShell;
+	Fitness *mFitness;
 	NelderMead *mNM;
 	SLS *mSLS;
 	BruteForce *mBF;

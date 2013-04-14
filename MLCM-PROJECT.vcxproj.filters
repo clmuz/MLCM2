@@ -22,30 +22,21 @@
     <Filter Include="Заголовочные файлы\Hydrograph\Calibration">
       <UniqueIdentifier>{e03133ff-0cec-4e6c-b7aa-cc6b6cee32c8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Заголовочные файлы\Системные">
-      <UniqueIdentifier>{562072ae-5968-4647-affd-0fb412b2cbd9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Заголовочные файлы\Диалоги">
       <UniqueIdentifier>{0edf2315-5a02-4a5b-a935-e6739ec6c8ae}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
+    <Filter Include="Заголовочные файлы\Системные">
+      <UniqueIdentifier>{562072ae-5968-4647-affd-0fb412b2cbd9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Hydrograph\Hydrograph.h">
-      <Filter>Заголовочные файлы\Hydrograph</Filter>
-    </ClInclude>
-    <ClInclude Include="Hydrograph\Element.h">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClInclude>
     <ClInclude Include="Hydrograph\Gamma.h">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClInclude>
     <ClInclude Include="Hydrograph\Mlcm.h">
-      <Filter>Заголовочные файлы\Hydrograph</Filter>
-    </ClInclude>
-    <ClInclude Include="Hydrograph\MlcmShell.h">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClInclude>
     <ClInclude Include="Hydrograph\Fitness\AbsoluteSquareError.h">
@@ -99,11 +90,11 @@
     <ClInclude Include="Hydrograph\Calibration\SLS.h">
       <Filter>Заголовочные файлы\Hydrograph\Calibration</Filter>
     </ClInclude>
+    <ClInclude Include="Hydrograph\ModelsShell.h">
+      <Filter>Заголовочные файлы\Hydrograph</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Hydrograph\Element.cpp">
-      <Filter>Заголовочные файлы\Hydrograph</Filter>
-    </ClCompile>
     <ClCompile Include="Hydrograph\Gamma.cpp">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClCompile>
@@ -111,9 +102,6 @@
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClCompile>
     <ClCompile Include="Hydrograph\Mlcm.cpp">
-      <Filter>Заголовочные файлы\Hydrograph</Filter>
-    </ClCompile>
-    <ClCompile Include="Hydrograph\MlcmShell.cpp">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClCompile>
     <ClCompile Include="Hydrograph\Fitness\AbsoluteSquareError.cpp">
@@ -152,6 +140,9 @@
     <ClCompile Include="Hydrograph\Calibration\SLS.cpp">
       <Filter>Заголовочные файлы\Hydrograph\Calibration</Filter>
     </ClCompile>
+    <ClCompile Include="Hydrograph\ModelsShell.cpp">
+      <Filter>Заголовочные файлы\Hydrograph</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MLCM-PROJECT.rc">
@@ -164,10 +155,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\MLCM-PROJECT.ico">
-      <Filter>Файлы ресурсов</Filter>
-    </Image>
-    <Image Include="..\..\Hydrograph\MLCM\MLCM\res\MLCM.ico">
+    <Image Include="res\MLCM.ico">
       <Filter>Файлы ресурсов</Filter>
     </Image>
   </ItemGroup>

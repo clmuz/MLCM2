@@ -2,8 +2,8 @@
 #include <cmath>
 #include "AbsoluteSquareError.h"
 
-AbsoluteSquareError::AbsoluteSquareError(Mlcm *model) :
-	mModel(model),
+AbsoluteSquareError::AbsoluteSquareError(ModelsShell *modShell) :
+	mShell(modShell),
 	mDayBeg(-1),
 	mDayEnd(-1)
 { }
@@ -12,7 +12,7 @@ double AbsoluteSquareError::countError() const
 {
 	int beg = mDayBeg * mMeasPerDay;
 	vector<double> modVal;
-	modVal = mModel -> makeRunoff(mDayBeg * mMeasPerDay, (mDayEnd + 1) * mMeasPerDay);
+	modVal = mShell -> makeRunoff(mDayBeg, mDayEnd);
 	double sum = 0;
 	for (int i = 0; i < modVal.size(); i++)
 		sum += pow(modVal[i] - (*mRealVal)[i + beg], 2);

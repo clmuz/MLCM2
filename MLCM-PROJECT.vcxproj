@@ -98,15 +98,11 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Hydrograph\Calibration\BruteForce.h" />
     <ClInclude Include="Hydrograph\Calibration\Calibration.h" />
     <ClInclude Include="Hydrograph\Calibration\NelderMead.h" />
     <ClInclude Include="Hydrograph\Calibration\SLS.h" />
     <ClInclude Include="Hydrograph\Calibration\stdafx.h" />
-    <ClInclude Include="Hydrograph\Element.h" />
     <ClInclude Include="Hydrograph\Fitness\AbsoluteSquareError.h" />
     <ClInclude Include="Hydrograph\Fitness\Fitness.h" />
     <ClInclude Include="Hydrograph\Fitness\Msof.h" />
@@ -114,7 +110,7 @@
     <ClInclude Include="Hydrograph\Gamma.h" />
     <ClInclude Include="Hydrograph\Hydrograph.h" />
     <ClInclude Include="Hydrograph\Mlcm.h" />
-    <ClInclude Include="Hydrograph\MlcmShell.h" />
+    <ClInclude Include="Hydrograph\ModelsShell.h" />
     <ClInclude Include="Hydrograph\stdafx.h" />
     <ClInclude Include="InfoDlg.h" />
     <ClInclude Include="MLCM-PROJECT.h" />
@@ -129,14 +125,13 @@
     <ClCompile Include="Hydrograph\Calibration\Calibration.cpp" />
     <ClCompile Include="Hydrograph\Calibration\NelderMead.cpp" />
     <ClCompile Include="Hydrograph\Calibration\SLS.cpp" />
-    <ClCompile Include="Hydrograph\Element.cpp" />
     <ClCompile Include="Hydrograph\Fitness\AbsoluteSquareError.cpp" />
     <ClCompile Include="Hydrograph\Fitness\Fitness.cpp" />
     <ClCompile Include="Hydrograph\Fitness\Msof.cpp" />
     <ClCompile Include="Hydrograph\Gamma.cpp" />
     <ClCompile Include="Hydrograph\Hydrograph.cpp" />
     <ClCompile Include="Hydrograph\Mlcm.cpp" />
-    <ClCompile Include="Hydrograph\MlcmShell.cpp" />
+    <ClCompile Include="Hydrograph\ModelsShell.cpp" />
     <ClCompile Include="InfoDlg.cpp" />
     <ClCompile Include="MLCM-PROJECT.cpp" />
     <ClCompile Include="MLCMDlg.cpp" />
@@ -153,8 +148,7 @@
     <None Include="res\MLCMPROJECT.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\Hydrograph\MLCM\MLCM\res\MLCM.ico" />
-    <Image Include="res\MLCM-PROJECT.ico" />
+    <Image Include="res\MLCM.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

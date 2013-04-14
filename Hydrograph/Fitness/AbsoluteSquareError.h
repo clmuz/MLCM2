@@ -1,13 +1,15 @@
 #pragma once
 #include <vector>
-#include "..\Mlcm.h"
+#include "..\ModelsShell.h"
 
 //Среднеквадратичная ошибка
+
+class ModelsShell;
 
 class AbsoluteSquareError
 {
 public:
-	explicit AbsoluteSquareError(Mlcm *model);
+	explicit AbsoluteSquareError(ModelsShell *modShell);
 	//Посчитать среднеквадратичную ошибку
 	double countError() const;
 	//Посчитать ошибку от уже посчитанной модели
@@ -19,7 +21,7 @@ public:
 	//Установить реальные данные
 	void setRealVal(vector<double> *realDat, const int &gap);
 private:
-	Mlcm *mModel;
+	ModelsShell *mShell;
 	//Реальные данные
 	vector<double> *mRealVal;
 	//Разница между осадками и реальными данными в днях

@@ -1,42 +1,12 @@
 #include "stdafx.h"
 #include "MLCM-PROJECT.h"
+#include "TuneDlg.h"
 #include "MLCMDlg.h"
 #include "afxdialogex.h"
 #include <fstream>
 #include <vector>
 
 using namespace std;
-
-// Диалоговое окно CAboutDlg используется для описания сведений о приложении
-
-class CAboutDlg : public CDialogEx
-{
-public:
-	CAboutDlg();
-
-// Данные диалогового окна
-	enum { IDD = IDD_ABOUTBOX };
-
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // поддержка DDX/DDV
-
-// Реализация
-protected:
-	DECLARE_MESSAGE_MAP()
-};
-
-CAboutDlg::CAboutDlg() : CDialogEx(CAboutDlg::IDD)
-{
-}
-
-void CAboutDlg::DoDataExchange(CDataExchange* pDX)
-{
-	CDialogEx::DoDataExchange(pDX);
-}
-
-BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-END_MESSAGE_MAP()
-
 
 // диалоговое окно CMLCMDlg
 
@@ -64,7 +34,7 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	, mComboModAndVal(0)
 	, mModValFrom(COleDateTime::GetCurrentTime())
 	, mModValTo(COleDateTime::GetCurrentTime())
-	, mHeatDays(0)
+	, mWarmingDays(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	mIsDeck = 0;
@@ -73,7 +43,7 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	mInfo = new InfoDlg();
 	mH = new Hydrograph();
 	try {
-		loadConfig("default.config");
+		loadConfig(_T("default.config"));
 	}
 	catch (const int &a) {
 		printError(a);
@@ -85,39 +55,35 @@ CMLCMDlg::~CMLCMDlg()
 	delete mInfo;
 }
 
-bool CMLCMDlg::doFileName(bool loadFile, CString &edit_str, char **charName)
+bool CMLCMDlg::doFileName(bool loadFile, CString &edit_str, const CString &format)
 {
 	UpdateData(1);
-	if (edit_str == "") {
-		CFileDialog fileDlg(loadFile);
-		if (fileDlg.DoModal() == IDOK) {
-			edit_str = fileDlg.m_ofn.lpstrFile;
-			UpdateData(0);
-		}
-		else
-			return 0;
+	if (edit_str != L"")
+		return 1;
+	CString filters = L"txt (*.txt)|*.txt|Deck file (*.deck)|*.deck|Precipitation file (*.pcp)|*.pcp|";
+	filters += L"Real data (*.dat)|*.dat|Settings file (*.config)|*.config|MLCM parameters (*.param)|All Files (*.*)|*.*||";
+	CString format1 = L"*" + format;
+	CFileDialog fileDlg(loadFile, format, format1, 6UL, filters);
+	if (fileDlg.DoModal() == IDOK) {
+		edit_str = fileDlg.GetPathName();
+		UpdateData(0);
 	}
-	int size = edit_str.GetLength();
-	char *name = new char[size];
-	for (int i = 0; i < size; i++) {
-		name[i] = edit_str[i];
-	}
-	name[size] = 0;
-	*charName = name;
+	else
+		return 0;
 	return 1;
 }
 
-void CMLCMDlg::loadConfig(char *configName)
+void CMLCMDlg::loadConfig(const wchar_t *configName)
 {
 	ifstream confin(configName, ios::out);
 	int calType, fitnType, valType;
 	confin >> calType >> fitnType >> valType;
-	mH->setCalibrationType(calType);
-	mH->setFitnessType(fitnType, valType);
+	mH->setCalibrationType(doCalibrationType(calType));
+	mH->setFitnessType(doFitnessType(fitnType), doFitnessType(valType));
 	confin >> mOutFormat;
 	mH->setOutFormat(mOutFormat--);
-	confin >> mHeatDays;
-	mH->setHeatDays(mHeatDays);
+	confin >> mWarmingDays;
+	mH->setWarmingDays(mWarmingDays);
 	double c1, c2;
 	confin >> c1 >> c2;
 	mH->setCLim(c1, c2);
@@ -150,7 +116,7 @@ void CMLCMDlg::loadConfig(char *configName)
 	double slsStep;
 	int slsLim, slsCalType;
 	confin >> slsStep >> slsLim >> slsCalType;
-	mH->setSlsParam(slsStep, slsLim, slsCalType);
+	mH->setSlsParam(slsStep, slsLim, doCalibrationType(slsCalType));
 	double minGrowth;
 	if (confin.ios::eof()) {
 		confin.close();
@@ -161,14 +127,15 @@ void CMLCMDlg::loadConfig(char *configName)
 	confin.close();
 }
 
-void CMLCMDlg::saveConfig(char *configName)
+void CMLCMDlg::saveConfig(const wchar_t *configName)
 {
 	ofstream confout(configName, ios::out);
-	int calType, defFitnType, valType;
+	calibrationType calType;
+	fitnessType defFitnType, valType;
 	mH->getCalAndFitnessTypes(calType, defFitnType, valType);
-	confout << calType << " " << defFitnType << " " << valType << endl;
+	confout << (int)calType << " " << (int)defFitnType << " " << (int)valType << endl;
 	confout << mH->getOutFormat() << endl;
-	confout << mH->getHeatDays() << endl;
+	confout << mH->getWarmingDays() << endl;
 	int maxA[11], maxZ[10];
 	mH->getMaxAandZ(maxA, maxZ);
 	double c1, c2;
@@ -194,9 +161,10 @@ void CMLCMDlg::saveConfig(char *configName)
 		confout << koeffs[i] << " " << koeffs[i + 1] << endl;
 	}
 	double slsStep;
-	int slsLim, slsCalType;
+	int slsLim;
+	calibrationType slsCalType;
 	mH->getSlsParams(slsStep, slsLim, slsCalType);
-	confout << slsStep << " " << slsLim << " " << slsCalType << endl;
+	confout << slsStep << " " << slsLim << " " << (int)slsCalType << endl;
 	confout << mH->getMinGrowth();
 	confout.close();
 }
@@ -244,7 +212,7 @@ void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_CBIndex(pDX, Combo_ModAndVal, mComboModAndVal);
 	DDX_DateTimeCtrl(pDX, Date_ModValFrom, mModValFrom);
 	DDX_DateTimeCtrl(pDX, Date_ModValTo, mModValTo);
-	DDX_Text(pDX, Edit_HeatDays, mHeatDays);
+	DDX_Text(pDX, Edit_WarmingDays, mWarmingDays);
 }
 
 BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
@@ -272,7 +240,15 @@ BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
 	ON_BN_CLICKED(Button_Validate, &CMLCMDlg::OnBnClickedValidate)
 	ON_BN_CLICKED(Button_ModAndVal, &CMLCMDlg::OnBnClickedModandval)
 	ON_CBN_SELCHANGE(Combo_OutFormat, &CMLCMDlg::OnCbnSelchangeOutformat)
-	ON_EN_CHANGE(Edit_HeatDays, &CMLCMDlg::OnEnChangeHeatdays)
+	ON_EN_CHANGE(Edit_WarmingDays, &CMLCMDlg::OnEnChangeWarmingdays)
+	ON_BN_CLICKED(Button_ClearSaveSett, &CMLCMDlg::OnBnClickedClearsavesett)
+	ON_BN_CLICKED(Button_ClearLoadSett, &CMLCMDlg::OnBnClickedClearloadsett)
+	ON_BN_CLICKED(Button_ClearDeck, &CMLCMDlg::OnBnClickedCleardeck)
+	ON_BN_CLICKED(Button_ClearPcp, &CMLCMDlg::OnBnClickedClearpcp)
+	ON_BN_CLICKED(Button_ClearDat, &CMLCMDlg::OnBnClickedCleardat)
+	ON_BN_CLICKED(Button_ClearOut, &CMLCMDlg::OnBnClickedClearout)
+	ON_BN_CLICKED(Button_ClearSaveMlcm, &CMLCMDlg::OnBnClickedClearsavemlcm)
+	ON_BN_CLICKED(Button_ClearLoadMlcm, &CMLCMDlg::OnBnClickedClearloadmlcm)
 END_MESSAGE_MAP()
 
 
@@ -314,15 +290,7 @@ BOOL CMLCMDlg::OnInitDialog()
 
 void CMLCMDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
-	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
-	{
-		CAboutDlg dlgAbout;
-		dlgAbout.DoModal();
-	}
-	else
-	{
-		CDialogEx::OnSysCommand(nID, lParam);
-	}
+	CDialogEx::OnSysCommand(nID, lParam);
 }
 
 // При добавлении кнопки свертывания в диалоговое окно нужно воспользоваться приведенным ниже кодом,
@@ -460,32 +428,28 @@ void CMLCMDlg::OnBnClickedDiminfo()
 
 void CMLCMDlg::OnBnClickedLoadsett()
 {
-	char *loadSettChar;
-	if(doFileName(1, mLoadSett, &loadSettChar)) {
+	if(doFileName(1, mLoadSett, L".config")) {
 		try {
-			loadConfig(loadSettChar);
+			loadConfig((const wchar_t *) mLoadSett);
 		}
 		catch (const int &a) {
 			printError(a);
 		}
 	}
-	UpdateData(0);
 }
 
 void CMLCMDlg::OnBnClickedSavesett()
 {
-	char *saveSettChar;
-	if(doFileName(0, mSaveSett, &saveSettChar)) {
-		saveConfig(saveSettChar);
+	if(doFileName(0, mSaveSett, L".config")) {
+		saveConfig((const wchar_t *) mSaveSett);
 	}
 }
 
 
 void CMLCMDlg::OnBnClickedSavemlcm()
 {
-	char *saveMlcmChar;
-	if (doFileName(0, mSaveMlcm, &saveMlcmChar))
-		mH->printMlcm(saveMlcmChar);
+	if (doFileName(0, mSaveMlcm, L".param"))
+		mH->printMlcm((const wchar_t *) mSaveMlcm);
 }
 
 
@@ -496,10 +460,9 @@ void CMLCMDlg::OnBnClickedLoadmlcm()
 		mInfo->print(text);
 		return;
 	}
-	char *loadMlcmChar;
-	if (doFileName(1, mLoadMlcm, &loadMlcmChar)) {
+	if (doFileName(1, mLoadMlcm, L".param")) {
 		try {
-			mH->loadMlcm(loadMlcmChar);
+			mH->loadMlcm((const wchar_t *) mLoadMlcm);
 		}
 		catch (const int &a) {
 			printError(a);
@@ -509,10 +472,9 @@ void CMLCMDlg::OnBnClickedLoadmlcm()
 
 void CMLCMDlg::OnBnClickedoutputfile()
 {
-	char *outputFileChar;
-	if (doFileName(0, mOutFile, &outputFileChar)) {
+	if (doFileName(0, mOutFile, L".dat")) {
 		mIsOutfile = 1;
-		mH->setOutFile(outputFileChar);
+		mH->setOutFile((const wchar_t *) mOutFile);
 	}
 }
 
@@ -538,10 +500,9 @@ double CMLCMDlg::doComboFormats(const CString &combo)
 
 void CMLCMDlg::OnBnClickeddeck()
 {
-	char *deckChar;
-	if (doFileName(1, mEditDeck, &deckChar)) {
+	if (doFileName(1, mEditDeck, L".deck")) {
 		mIsDeck = 1;
-		mH->readDeck(deckChar);
+		mH->readDeck((const wchar_t *) mEditDeck);
 	}
 }
 
@@ -553,11 +514,10 @@ void CMLCMDlg::OnBnClickedpcp()
 		mInfo->print(text);
 		return;
 	}
-	char *pcpChar;
-	if (doFileName(1, mEditPcp, &pcpChar)) {
+	if (doFileName(1, mEditPcp, L".pcp")) {
 		double pcpFormat = doComboFormats(mComboPcp);
 		try {
-			mH->readPcp(pcpFormat, pcpChar);
+			mH->readPcp(pcpFormat, (const wchar_t *) mEditPcp);
 			mIsPcp = 1;
 		}
 		catch (const int &a) {
@@ -573,11 +533,10 @@ void CMLCMDlg::OnBnClickeddat()
 		mInfo->print(text);
 		return;
 	}
-	char *datChar;
-	if (doFileName(1, mEditDat, &datChar)) {
+	if (doFileName(1, mEditDat, L".dat")) {
 		double datFormat = doComboFormats(mComboDat);
 		try {
-			mH->readDat(datFormat, datChar);
+			mH->readDat(datFormat, (const wchar_t *) mEditDat);
 		}
 		catch (const int &a) {
 			printError(a);
@@ -622,7 +581,7 @@ void CMLCMDlg::OnBnClickedCalibrate()
 	catch (const int &a) {
 		printError(a);
 	}
-	delete calBegin, calEnd;
+	delete[] calBegin, calEnd;
 }
 
 
@@ -646,7 +605,7 @@ void CMLCMDlg::OnBnClickedValidate()
 	catch (const int &a) {
 		printError(a);
 	}
-	delete valBegin, valEnd;
+	delete[] valBegin, valEnd;
 }
 
 
@@ -667,7 +626,7 @@ void CMLCMDlg::OnBnClickedModel()
 	catch (const int &a) {
 		printError(a);
 	}
-	delete modBegin, modEnd;
+	delete[] modBegin, modEnd;
 }
 
 void CMLCMDlg::OnBnClickedModandval()
@@ -680,7 +639,7 @@ void CMLCMDlg::OnBnClickedModandval()
 	int *modValBegin = doDate(mModValFrom);
 	int *modValEnd = doDate(mModValTo);
 	try {
-		double val = mH->printPredAndValid(modValBegin, modValEnd, mComboModAndVal - 1);
+		double val = mH->printPredAndValid(modValBegin, modValEnd, doFitnessType(mComboModAndVal));
 		CString text = L"Моделирование прошло успешно. ";
 		CString valStr;
 		valStr.Format(L"%f", val);
@@ -691,7 +650,7 @@ void CMLCMDlg::OnBnClickedModandval()
 	catch (const int &a) {
 		printError(a);
 	}
-	delete modValBegin, modValEnd;
+	delete[] modValBegin, modValEnd;
 }
 
 void CMLCMDlg::OnCbnSelchangeOutformat()
@@ -700,8 +659,92 @@ void CMLCMDlg::OnCbnSelchangeOutformat()
 	mH->setOutFormat(mOutFormat + 1);
 }
 
-void CMLCMDlg::OnEnChangeHeatdays()
+void CMLCMDlg::OnEnChangeWarmingdays()
 {
 	UpdateData(1);
-	mH->setHeatDays(mHeatDays);
+	mH->setWarmingDays(mWarmingDays);
+}
+
+fitnessType CMLCMDlg::doFitnessType(const int &intFitn) const
+{
+	switch (intFitn) {
+	case 0:
+		return FT_MSOF;
+	case 1:
+		return FT_ASE;
+	default:
+		return FT_Default;
+	}
+}
+
+calibrationType CMLCMDlg::doCalibrationType(const int &intCal) const
+{
+	switch (intCal) {
+	case 0:
+		return CT_NelderMead;
+	case 1:
+		return CT_ComplexNelderMead;
+	case 2:
+		return CT_SLS;
+	case 3:
+		return CT_BruteForce;
+	default:
+		return CT_NULL;
+	}
+}
+
+
+void CMLCMDlg::OnBnClickedClearsavesett()
+{
+	mSaveSett = L"";
+	UpdateData(0);
+}
+
+
+void CMLCMDlg::OnBnClickedClearloadsett()
+{
+	mLoadSett = L"";
+	UpdateData(0);
+}
+
+
+void CMLCMDlg::OnBnClickedCleardeck()
+{
+	mEditDeck = L"";
+	UpdateData(0);
+}
+
+
+void CMLCMDlg::OnBnClickedClearpcp()
+{
+	mEditPcp = L"";
+	UpdateData(0);
+}
+
+
+void CMLCMDlg::OnBnClickedCleardat()
+{
+	mEditDat = L"";
+	UpdateData(0);
+}
+
+
+void CMLCMDlg::OnBnClickedClearout()
+{
+	mOutFile = L"";
+	UpdateData(0);
+}
+
+
+void CMLCMDlg::OnBnClickedClearsavemlcm()
+{
+	mSaveMlcm = L"";
+	UpdateData(0);
+}
+
+
+void CMLCMDlg::OnBnClickedClearloadmlcm()
+{
+	mLoadMlcm = L"";
+	UpdateData(0);
 }
