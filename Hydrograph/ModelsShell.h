@@ -29,7 +29,7 @@ public:
 	//Изменить параметры MLCM
 	void changeModelParametrs(const double *params);
 	//Установить ограничения на скорости через слои и ширины слоев
-	void setMaxAandZ(const int *maxA, const int *maxZ);
+	void setMaxAandZ(const double *maxA, const double *maxZ);
 	//Установить трансформацию паводочного слоя
 	void setCLim(const double &minC, const double &maxC);
 	//Установить начало и конец действия целевой функции
@@ -43,7 +43,7 @@ public:
 	void loadParams(const wchar_t *inputParamFile);
 	//гетеры
 	int getOutFormat() const;
-	void getMaxAandZ(int *maxA, int *maxZ) const;
+	void getMaxAandZ(double *maxA, double *maxZ) const;
 	void getCLim(double &minC, double &maxC) const;
 	//Задать выходной файл
 	void setOutFile(const wchar_t *outFileName);
@@ -86,9 +86,7 @@ private:
 	//MLCM
 	Mlcm *mMlcm;
 	//Целевые функции
-	Fitness *mFitness;
-	//Длина склона
-	double mAslope;
+	Fitness *mFitness;;
 	//Площадь водосбора
 	double mFbasin;
 	//Количество измерений в день

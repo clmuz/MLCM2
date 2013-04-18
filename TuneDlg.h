@@ -38,7 +38,7 @@ private:
 	//Диалоговое окно информации
 	InfoDlg *mInfo;
 	//Переменные окна и обработчики событий
-	int mMaxA[11], mMaxZ[10];
+	double mMaxA[11], mMaxZ[10];
 	int mBFStepsNum;
 	int mBFItNum;
 	CString mNMLoad;

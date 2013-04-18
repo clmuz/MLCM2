@@ -5,8 +5,6 @@
 #include "Gamma.h"
 #include "Mlcm.h"
 
-const double Mlcm::mMin = 1e-4;
-
 Mlcm::Mlcm() :
 	mRealBeg(0),
 	mRealEnd(0),
@@ -15,60 +13,59 @@ Mlcm::Mlcm() :
 	mK(2),
 	mEtta(2),
 	mT(0),
-	mAlpha0(100),
 	mWarmingSteps(0),
 	mMinC(0.5),
 	mMaxC(1)
 {
 	mClick = new int (0);
-	mTime = new double [10];
 	mAlpha = new double [11];
 	mZ = new double [10];
 	mMaxA = new double [11];
+	mMaxAS = new double [11];
 	int i;
 	for (i = 0; i < 11; i++) {
-		mAlpha[i] = 100;
-		mMaxA[i] = 100;
+		mAlpha[i] = 100.;
+		mMaxA[i] = 100.;
+		mMaxAS[i] = 1.;
 	}
 	mMaxZ = new double [10];
+	mMaxZS = new double [10];
 	for (i = 0; i < 10; i++) {
-		mZ[i] = 100;
-		mMaxZ[i] = 100;
+		mZ[i] = 100.;
+		mMaxZ[i] = 100.;
+		mMaxZS[i] = 10.;
 	}
 }
 
 Mlcm::~Mlcm()
 {
-	delete mClick, mMaxA, mMaxZ, mTime, mAlpha, mZ;
+	delete mClick, mMaxA, mMaxZ, mAlpha, mZ;
 }
 
-void Mlcm::setAslopeAndNuh(const double &Aslope, const int &nuh)
+void Mlcm::setAslopeAndNuh(const double &fbasin, const int &nuh)
 {
-	mAslope = Aslope;
+	mFbasin = fbasin;
 	mNuh = nuh;
 	mNOrd = mNuh + (int) ceil(mT);
 	makeHydrOrd();
+	mMaxAS[0] = mMaxA[0] * mFbasin;
+	for (int i = 0; i < 10; i++) {
+		mMaxAS[i + 1] = mMaxA[i + 1] * mFbasin;
+		mMaxZS[i] = mMaxZ[i] * mFbasin;
+	}
 }
 
 void Mlcm::setParam(const double *params)
 {
-	mAlpha0 = mMaxA[0] * params[0];
+	mAlpha[0] = mMaxAS[0] * params[0];
 	mC = mMinC + (mMaxC - mMinC) * params[1];
 	mK = 1 + 19 * params[2];
 	mEtta = 1 + 4 * params[3];
 	mT = 24 * params[4];
 	mNOrd = mNuh + (int) ceil(mT);
-	if (mAlpha0 > mMin)
-		mTime0 = (int) ceil((double) mAslope / mAlpha0);
-	else 
-		mTime0 = 1000000;
 	for (int i = 0; i < mN; i++) {
-		mAlpha[i] = mMaxA[i + 1] * params[5 + 2 * i];
-		if (mAlpha[i] > mMin)
-			mTime[i] = (double) mAslope / mAlpha[i];
-		else
-			mTime[i] = 1e10;
-		mZ[i] = mMaxZ[i] * params[6 + 2 * i];
+		mAlpha[i + 1] = mMaxAS[i + 1] * params[5 + 2 * i];
+		mZ[i] = mMaxZS[i] * params[6 + 2 * i];
 	}
 	makeHydrOrd();
 }
@@ -96,13 +93,12 @@ int Mlcm::click()
 vector<double> Mlcm::makeRunoff(const int &timeBeg, const int &timeEnd) const
 {
 	(*mClick)++;
-	queue<Water> waterQueue[11];
 	vector<double> state (mN + 1, 0);
 	vector<double> Qsum;
 	int i;
 	int WarmingBeg = max (timeBeg - mWarmingSteps, 0);
 	for (i = WarmingBeg; i < timeEnd; i++) {
-		Qsum.push_back(makeStep((*mP)[i], (*mET)[i], i, waterQueue, state));
+		Qsum.push_back(makeStep((*mP)[i], (*mET)[i], state));
 	}
 	vector<double> Q;
 	int a2 = min(mRealBeg + 1, timeEnd);
@@ -148,64 +144,46 @@ double Mlcm::countUhT(const vector<double> &Qsum, const int &time) const
 
 double Mlcm::makeStep(const double &P
 					  , const double &ET
-					  , const int &time
-					  , queue<Water> *waterQueue
 					  , vector<double> &state) const
 {
 	if (P <= ET)
-		return countChannelWater(time, waterQueue, state);
+		return countChannelWater(state);
 	double P0 = P - ET;
 	if (mN == 0) {
-		Water newWater (P0, mTime0 + time - 1);
-		waterQueue[0].push(newWater);
+		state[0] += P0;
 	}
 	else {
-		if (P0 > mAlpha[0]) {
-			Water newWater (P0 - mAlpha[0], mTime0 + time - 1);
-			waterQueue[0].push(newWater);
-			P0 = mAlpha[0];
+		if (P0 > mAlpha[1]) {
+			state[0] += P0 - mAlpha[0];
+			P0 = mAlpha[1];
 		}
-		double time1 = -1;
-		for (int i = 0; i < mN; i++) {
-			if (P0 + state[i + 1] < mZ[i]) {
-				state[i + 1] += P0;
-				Water newWater (P0, (int) ceil(time1 + mTime[i]) + time);
-				waterQueue[i + 1].push(newWater);
+		for (int i = 1; i <= mN; i++) {
+			if (P0 + state[i] < mZ[i - 1]) {
+				state[i] += P0;
 				break;
 			}
-			time1 += (mZ[i] - state[i + 1]) * 1.0 / mAlpha[i];
-			if (i == mN - 1) {
-				state[i + 1] = mZ[i];
-				Water newWater (P0, (int) ceil(time1 + mTime[i]) + time);
-				waterQueue[i + 1].push(newWater);
+			if (i == mN) {
+				state[i] = P0;
 				break;
 			}
 			if (P0 > mAlpha[i + 1]) {
-				state[i + 1] = max(0.0, mZ[i] - mAlpha[i + 1]);
-				Water newWater (P0 - mAlpha[i + 1], (int) ceil(time1 + mTime[i + 1]) + time);
-				waterQueue[i + 1].push(newWater);
+				state[i] = P0 - mAlpha[i + 1];
 				P0 = mAlpha[i + 1];
 			}
 		}
 	}
-	return countChannelWater(time, waterQueue, state);
+	return countChannelWater(state);
 }
 
-double Mlcm::countChannelWater(const int &time, queue<Water> *waterQueue, vector<double> &state) const
+double Mlcm::countChannelWater(vector<double> &state) const
 {
-	double sum = 0, tmp;
+	double sum = 0;
 	for (int i = 0; i <= mN; i++) {
-		while ((!waterQueue[i].empty()) && (waterQueue[i].front().time <= time)) {
-			tmp = waterQueue[i].front().water;
-			sum += tmp;
-			state[i] = max(state[i] - tmp, .0);
-			waterQueue[i].pop();
-		}
+		sum += min(state[i], mAlpha[i]);
+		state[i] = max(state[i] - mAlpha[i], 0.);
 	}
 	return sum;
 }
-
-Mlcm::Water::Water(const double &waterThikness, const int &newTime) : water(waterThikness), time(newTime) {}
 
 void Mlcm::setWarmingSteps(const int &countOfWarmingSteps)
 {
@@ -218,16 +196,16 @@ int Mlcm::getWarmingSteps() const
 	return mWarmingSteps;
 }
 
-void Mlcm::setMaxAandZ(const int *maxA, const int *maxZ)
+void Mlcm::setMaxAandZ(const double *maxA, const double *maxZ)
 {
 	int i;
 	for (i = 0; i < 11; i++) {
 		if (maxA[i] != -1)
-			mMaxA[i] = (double) maxA[i] * 2.7777778e-7;
+			mMaxA[i] = maxA[i];
 	}
 	for (i = 0; i < 10; i++) {
 		if (maxZ[i] != -1)
-			mMaxZ[i] = (double) maxZ[i] * 0.001;
+			mMaxZ[i] = maxZ[i];
 	}
 }
 
@@ -241,13 +219,13 @@ void Mlcm::setCLim(const double &minC, const double &maxC)
 		mMaxC = maxC;
 }
 
-void Mlcm::getMaxAandZ(int *maxA, int *maxZ) const
+void Mlcm::getMaxAandZ(double *maxA, double *maxZ) const
 {
 	int i;
 	for (i = 0; i < 11; i++)
-		maxA[i] = (int) (mMaxA[i] * 3.6e6);
+		maxA[i] = mMaxA[i];
 	for (i = 0; i < 10; i++)
-		maxZ[i] = (int) (mMaxZ[i] * 1e3);
+		maxZ[i] = mMaxZ[i];
 }
 
 void Mlcm::getCLim(double &minC, double &maxC) const
@@ -270,9 +248,9 @@ void Mlcm::printParams(const wchar_t *outputParamFile) const
 	ofstream fout(outputParamFile, ios::out);
 	if (!fout)
 		throw(3);
-	fout << mN << endl << mAlpha0 << endl << mC << endl << mK << endl << mEtta << endl << mT;
+	fout << mN << endl << mAlpha[0] << endl << mC << endl << mK << endl << mEtta << endl << mT;
 	for (int i = 0; i < mN; i++)
-		fout << endl << mAlpha[i] << " " << mZ[i];
+		fout << endl << mAlpha[i + 1] << " " << mZ[i];
 	fout.close();
 }
 
@@ -281,26 +259,15 @@ void Mlcm::loadParams(const wchar_t *inputParamFile)
 	ifstream fin(inputParamFile, ios::in);
 	if (!fin)
 		throw(3);
-	char commentCheck;
-	fin >> commentCheck;
 	string str;
-	while (commentCheck == '/') {
+	do {
 		getline(fin, str);
-		commentCheck = str[0];
-	}
+	} while (str[0] == '/');
 	mN = atoi(str.c_str());
-	fin >> mAlpha0 >> mC >> mK >> mEtta >> mT;
+	fin >> mAlpha[0] >> mC >> mK >> mEtta >> mT;
 	mNOrd = mNuh + (int) ceil(mT);
-	if (mAlpha0 > mMin)
-		mTime0 = (int) ceil((double) mAslope / mAlpha0);
-	else 
-		mTime0 = 1000000;
 	for (int i = 0; i < mN; i++) {
-		fin >> mAlpha[i] >> mZ[i];
-		if (mAlpha[i] > mMin)
-			mTime[i] = ceil((double) mAslope / mAlpha[i]);
-		else
-			mTime[i] = 1000000;
+		fin >> mAlpha[i + 1] >> mZ[i];
 	}
 	fin.close();
 	makeHydrOrd();

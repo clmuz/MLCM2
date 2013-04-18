@@ -47,7 +47,7 @@ void ModelsShell::setOutFormat(const int &outFormat)
 	mOutfileFormat = outFormat;
 }
 
-void ModelsShell::setMaxAandZ(const int *maxA, const int *maxZ)
+void ModelsShell::setMaxAandZ(const double *maxA, const double *maxZ)
 {
 	mMlcm->setMaxAandZ(maxA, maxZ);
 }
@@ -188,7 +188,7 @@ int ModelsShell::getOutFormat() const
 	return mOutfileFormat;
 }
 
-void ModelsShell::getMaxAandZ(int *maxA, int *maxZ) const
+void ModelsShell::getMaxAandZ(double *maxA, double *maxZ) const
 {
 	mMlcm->getMaxAandZ(maxA, maxZ);
 }
@@ -248,7 +248,6 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 		getline(deckIn, str[i]);
 	if (str[3] == "") {
 		mFbasin = atof(str[0].c_str()) * fbasinFormat;
-		mAslope = sqrt(mFbasin) / 2;
 		mMeasPerDay = (int) atof(str[1].c_str());
 		nuh = (int) atof(str[2].c_str());
 		mEtWay = 1;
@@ -263,7 +262,6 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 			getline(deckIn, str[i]);
 		if (str[6] == "") {
 			mFbasin = atof(str[0].c_str()) * fbasinFormat;
-			mAslope = sqrt(mFbasin) / 2;
 			mMeasPerDay = (int) atof(str[1].c_str());
 			nuh = (int) atof(str[2].c_str());
 			stringstream etParam (str[3].c_str());
@@ -295,7 +293,6 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 			mEtWay = 0;
 			basinAndNuh >> mFbasin >> nuh;
 			mFbasin *= fbasinFormat;
-			mAslope = sqrt(mFbasin) / 2;
 			stringstream et (str[5]);
 			et.seekg(20);
 			string etStr = "    ";
@@ -310,7 +307,7 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 			mAvET[13] = mAvET[1];
 		}
 	}
-	mMlcm->setAslopeAndNuh(mAslope, nuh);
+	mMlcm->setAslopeAndNuh(mFbasin, nuh);
 	mFitness->setMeasPerDay(mMeasPerDay);
 	mMlcm->setWarmingSteps(mWarmingDays * mMeasPerDay);
 	deckIn.close();

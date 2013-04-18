@@ -171,18 +171,18 @@ void TuneDlg::OnBnClickedLoadnmkoeffs()
 
 void TuneDlg::saveMaxAandZ()
 {
-	int *maxA = new int [11];
-	int *maxZ = new int [10];
-	if ((mMaxA[0] > 0) && (mMaxA[0] < 1e7))
+	double *maxA = new double [11];
+	double *maxZ = new double [10];
+	if ((mMaxA[0] > 0) && (mMaxA[0] < 1e10))
 		maxA[0] = mMaxA[0];
 	else
 		maxA[0] = -1;
 	for (int i = 0; i < 10; i++) {
-		if ((mMaxA[i + 1] > 0) && (mMaxA[i + 1] < 1e7))
+		if ((mMaxA[i + 1] > 0) && (mMaxA[i + 1] < 1e10))
 			maxA[i + 1] = mMaxA[i + 1];
 		else
 			maxA[i + 1] = -1;
-		if ((mMaxZ[i] > 0) && (mMaxZ[i] < 1e6))
+		if ((mMaxZ[i] > 0) && (mMaxZ[i] < 1e10))
 			maxZ[i] = mMaxZ[i];
 		else
 			maxZ[i] = -1;

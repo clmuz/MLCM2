@@ -30,7 +30,7 @@ void Hydrograph::setOutFormat(const int outFormat)
 	mShell->setOutFormat(outFormat);
 }
 
-void Hydrograph::setMaxAandZ(const int *maxA, const int *maxZ)
+void Hydrograph::setMaxAandZ(const double *maxA, const double *maxZ)
 {
 	mShell->setMaxAandZ(maxA, maxZ);
 }
@@ -114,7 +114,7 @@ int Hydrograph::getOutFormat() const
 	return mShell->getOutFormat();
 }
 
-void Hydrograph::getMaxAandZ(int *maxA, int *maxZ) const
+void Hydrograph::getMaxAandZ(double *maxA, double *maxZ) const
 {
 	mShell->getMaxAandZ(maxA, maxZ);
 }

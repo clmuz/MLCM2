@@ -12,7 +12,7 @@ public:
 	Mlcm();
 	~Mlcm();
 	//Установить длину склона и количество ординат единичного гидрографа
-	void setAslopeAndNuh(const double &Aslope, const int &nuh);
+	void setAslopeAndNuh(const double &faslope, const int &nuh);
 	//Установить реальные данные и их начало
 	void setRealData(vector<double> *realData, const int &realDatBeg);
 	//Установить количество слоев
@@ -27,10 +27,10 @@ public:
 	//Узнать количество шагов прогрева модели
 	int getWarmingSteps() const;
 	//Установить ограничения на скорости через слои и ширины слоев
-	void setMaxAandZ(const int *maxA, const int *maxZ);
+	void setMaxAandZ(const double *maxA, const double *maxZ);
 	//Установить ограничения на скорость трансформации паводочной волны
 	void setCLim(const double &minC, const double &maxC);
-	void getMaxAandZ(int *maxA, int *maxZ) const;
+	void getMaxAandZ(double *maxA, double *maxZ) const;
 	void getCLim(double &minC, double &maxC) const;
 	//Запуск модели
 	vector<double> makeRunoff(const int &timeBeg, const int &timeEnd) const;
@@ -39,12 +39,6 @@ public:
 	void printParams(const wchar_t *outputParamFile) const; //TODO
 	void loadParams(const wchar_t *inputParamFile); //TODO
 private:
-	//Сколько воды дойдет до конца склона в момент времени time
-	struct Water {
-		Water (const double &waterThikness, const int &newTime);
-		double water;
-		int time;
-	};
 	//Задает ординаты единичного гидрографа
 	void makeHydrOrd();
 	//Считает Qsum в момент времени time
@@ -52,11 +46,9 @@ private:
 	//Один шаг модели (шаг = 24/<количество измерений в день>)
 	double makeStep(const double &P
 					, const double &ET
-					, const int &time
-					, queue<Water> *waterQueue
 					, vector<double> &state) const;
 	//Сколько воды дошло до конца склона в момент времени time
-	double countChannelWater(const int &time, queue<Water> *waterQueue, vector<double> &state) const;
+	double countChannelWater(vector<double> &state) const;
 	//Количество слоев
 	int mN;
 	//Количество ординат с учетом сдвига по времени
@@ -69,8 +61,6 @@ private:
 	int mRealEnd;
 	//Количество запусков модели на данный момент (int* чтобы не нарушать константность вызова модели)
 	int *mClick;
-	//Время за которое вода стечет по поверхности (в шагах)
-	int mTime0;
 	//Количество шагов прогрева модели
 	int mWarmingSteps;
 	//Скорость трансформации паводочного слоя
@@ -80,14 +70,8 @@ private:
 	double mK;
 	//Сдвиг по времени
 	double mT;
-	//Скорость поверхностного стекания
-	double mAlpha0;
-	//Длина склона
-	double mAslope;
-	//Константа, меньше которой скорость считается нулем
-	static const double mMin;
-	//Массив времен, за которые вода стечет по i-ому слою
-	double *mTime;
+	//Площадь склона
+	double mFbasin;
 	//Ординаты единичного гидрографа
 	vector<double> mFxOrd;
 	//Вектор скоростей через слои
@@ -100,10 +84,10 @@ private:
 	vector<double> *mET;
 	//Реальные данные
 	vector<double> *mRealData;
-	//Ограничения на скорости через слои (0 - поверхностный, 10 - 10 слой)
-	double *mMaxA;
+	//Ограничения на скорости через слои и на скорости, помноженные на площадь (0 - поверхностный, 10 - 10-ый слой)
+	double *mMaxA, *mMaxAS;
 	//Ограничения на ширины слоев (0 - 1 слой)
-	double *mMaxZ;
+	double *mMaxZ, *mMaxZS;
 	//Ограничения на скорость трансформации паводочной волны
 	double mMinC, mMaxC;
 };

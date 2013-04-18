@@ -20,7 +20,7 @@ public:
 	void setCalibrationType(const calibrationType &calType);
 	void setFitnessType(const fitnessType fitnDefType, const fitnessType valType);
 	void setOutFormat(const int outFormat);
-	void setMaxAandZ(const int *maxA, const int *maxZ);
+	void setMaxAandZ(const double *maxA, const double *maxZ);
 	void setNMStopAndLim(const double NMStop, const int NMLim);
 	void setNMKoeffs(const double koeff1, const double koeff2);
 	void setNMKoeffs(const vector<double> koeffs);
@@ -29,7 +29,7 @@ public:
 	void setBruteforceParams(const int steps, const int it);
 	void getCalAndFitnessTypes(calibrationType &calType, fitnessType &defFitnType, fitnessType &valType) const;
 	int getOutFormat() const;
-	void getMaxAandZ(int *maxA, int *maxZ) const;
+	void getMaxAandZ(double *maxA, double *maxZ) const;
 	void getBruteforceParams(int &steps, int &iter) const;
 	void getNMParams(double &stop, int &iter) const;
 	int getNMKoeffs(vector<double> &koeffs) const;
