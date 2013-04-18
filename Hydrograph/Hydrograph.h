@@ -40,9 +40,9 @@ public:
 	void setWarmingDays(const int countOfWarmingDays);
 	int getWarmingDays() const;
 	void setOutFile(const wchar_t *outFileName);
-	void readDeck(const wchar_t *filename);
-	void readPcp(const double format, const wchar_t *filename);
-	void readDat(const double format, const wchar_t *filename);
+	void readDeck(const double fbasinFormat, const double etFormat, const wchar_t *filename);
+	void readPcp(const double pcpFormat, const wchar_t *filename);
+	void readDat(const double qFormat, const wchar_t *filename);
 	int click();
 private:
 	//Оболочка модели

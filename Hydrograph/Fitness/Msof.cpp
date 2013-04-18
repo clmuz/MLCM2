@@ -20,51 +20,14 @@ void Msof::setBegEnd(const int &begDay, const int &endDay)
 
 double Msof::countError() const
 {
-	vector<double> modDaily, modMonthly, modVal;
-	modVal = mShell -> makeRunoff(mDayBeg, mDayEnd);
-	double sum;
-	unsigned int i, j;
-	for (i = 0; i <= mDayEnd - mDayBeg; i++) {
-		sum = 0;
-		for (j = 0; j < mMeasPerDay; j++)
-			sum += modVal[i * mMeasPerDay + j];
-		modDaily.push_back(sum / mMeasPerDay);
-	}
-	for (i = 0; i < floor((mDayEnd - mDayBeg - 1) / 30); i++) {
-		sum = 0;
-		for (j = 0; j < 30; j++) {
-			sum += modDaily[30 * i + j];
-		}
-		modMonthly.push_back(sum / 30);
-	}
-	sum = 0;
-	j = 0;
-	while (30 * i + j < modDaily.size()) {
-		sum += modDaily[i * 30 + j++];
-	}
-	modMonthly.push_back(sum / j);
-	double J = 0;
-	sum = 0;
-	j = (mDayBeg - mGap) * mMeasPerDay;
-	for (i = 0; i < modVal.size(); i++)
-		sum += pow(modVal[i] - (*mRealVal)[i + j], 2);
-	J += sum;
-	sum = 0;
-	for (i = 0; i < mAveDaily.size(); i++)
-		sum += pow(modDaily[i] - mAveDaily[i], 2);
-	J += mSigma1to2sq * sum;
-	sum = 0;
-	for (i = 0; i < mAveMonthly.size(); i++)
-		sum += pow(modMonthly[i] - mAveMonthly[i], 2);
-	J += mSigma1to3sq * sum;
-	return sqrt(J);
+	return countError(mShell -> makeRunoff(mDayBeg, mDayEnd));
 }
 
 double Msof::countError(const vector<double> &modVal) const
 {
 	vector<double> modDaily, modMonthly;
 	double sum;
-	unsigned int i, j;
+	int i, j;
 	for (i = 0; i <= mDayEnd - mDayBeg; i++) {
 		sum = 0;
 		for (j = 0; j < mMeasPerDay; j++)
@@ -79,34 +42,34 @@ double Msof::countError(const vector<double> &modVal) const
 		modMonthly.push_back(sum / 30);
 	}
 	sum = 0;
-	j = 0;
-	while (30 * i + j < modDaily.size()) {
-		sum += modDaily[i * 30 + j++];
+	unsigned int ui = i, uj = 0;
+	while (30 * ui + uj < modDaily.size()) {
+		sum += modDaily[ui * 30 + uj++];
 	}
-	modMonthly.push_back(sum / j);
+	modMonthly.push_back(sum / uj);
 	double J = 0;
 	sum = 0;
-	j = (mDayBeg - mGap) * mMeasPerDay;
-	for (i = 0; i < modVal.size(); i++)
-		sum += pow(modVal[i] - (*mRealVal)[i + j], 2);
-	J += sum;
+	uj = (mDayBeg + mGap) * mMeasPerDay;
+	for (ui = 0; ui < modVal.size(); ui++)
+		sum += pow(modVal[ui] - (*mRealVal)[ui + uj], 2);
+	J += sum / modVal.size();
 	sum = 0;
-	for (i = 0; i < mAveDaily.size(); i++)
-		sum += pow(modDaily[i] - mAveDaily[i], 2);
-	J += mSigma1to2sq * sum;
+	for (ui = 0; ui < mAveDaily.size(); ui++)
+		sum += pow(modDaily[ui] - mAveDaily[ui], 2);
+	J += mSigma1to2sq * (sum / modDaily.size());
 	sum = 0;
-	for (i = 0; i < mAveMonthly.size(); i++)
-		sum += pow(modMonthly[i] - mAveMonthly[i], 2);
-	J += mSigma1to3sq * sum;
+	for (ui = 0; ui < mAveMonthly.size(); ui++)
+		sum += pow(modMonthly[ui] - mAveMonthly[ui], 2);
+	J += mSigma1to3sq * (sum / modMonthly.size());
 	return sqrt(J);
 }
 
 void Msof::countRealVal() {
 	double sum;
-	unsigned int i, j;
+	int i, j;
 	mAveDaily.clear();
 	mAveMonthly.clear();
-	int tmp = (mDayBeg - mGap) * mMeasPerDay;
+	int tmp = (mDayBeg + mGap) * mMeasPerDay;
 	for (i = 0; i <= mDayEnd - mDayBeg; i++) {
 		sum = 0;
 		for (j = 0; j < mMeasPerDay; j++)
@@ -122,7 +85,7 @@ void Msof::countRealVal() {
 	}
 	sum = 0;
 	j = 0;
-	while (30 * i + j < mAveDaily.size()) {
+	while ((unsigned int) (30 * i + j) < mAveDaily.size()) {
 		sum += mAveDaily[i * 30 + j++];
 	}
 	mAveMonthly.push_back(sum / j);
@@ -131,15 +94,14 @@ void Msof::countRealVal() {
 void Msof::countSigmas()
 {
 	double sigma1 = 0, sigma2 = 0, sigma3 = 0, aver = 0;
-	unsigned int i;
-	for (i = (mDayBeg - mGap) * mMeasPerDay; i < (mDayEnd - mGap + 1) * mMeasPerDay; i++)
+	for (int i = (mDayBeg - mGap) * mMeasPerDay; i < (mDayEnd - mGap + 1) * mMeasPerDay; i++)
 		aver += (*mRealVal)[i];
 	aver /= (mDayEnd - mDayBeg + 1) * mMeasPerDay;
-	for (i = (mDayBeg - mGap) * mMeasPerDay; i < (mDayEnd - mGap + 1) * mMeasPerDay; i++)
+	for (int i = (mDayBeg - mGap) * mMeasPerDay; i < (mDayEnd - mGap + 1) * mMeasPerDay; i++)
 		sigma1 += pow((*mRealVal)[i] - aver, 2);
-	for (i = 0; i < mAveDaily.size(); i++)
+	for (unsigned int i = 0; i < mAveDaily.size(); i++)
 		sigma2 += pow(mAveDaily[i] - aver, 2);
-	for (i = 0; i < mAveMonthly.size(); i++)
+	for (unsigned int i = 0; i < mAveMonthly.size(); i++)
 		sigma3 += pow(mAveMonthly[i] - aver, 2);
 	sigma1 /= (mDayEnd - mDayBeg + 1) * mMeasPerDay;
 	sigma2 /= mAveDaily.size();

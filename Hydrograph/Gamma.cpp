@@ -120,8 +120,7 @@ double Gamma(const double &x)
     if (x > 171.624)
     {
 		// Correct answer too large to display. Force +infinity.
-		double temp = DBL_MAX;
-		return temp*2.0;
+		return DBL_MAX;
     }
 
     return exp(LogGamma(x));

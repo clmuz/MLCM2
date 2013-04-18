@@ -28,8 +28,8 @@ double BruteForce::doCalibration(const int &paramsNum, double *bestParams) const
 	double *leftBorder = new double[paramsNum];
 	int i, j;
 	for (i = 0; i < paramsNum; i++)
-		leftBorder[i] = 0;
-	double f = mMax, width = 1;
+		leftBorder[i] = 1.5e-2;
+	double f = mMax, width = 1.0 - 2.0 * leftBorder[0];
 	double halfStep = width / (2.0 * (mStepsNum + 1));
 	calibrateGap(paramsNum, f, leftBorder, width, bestParams);
 	for (i = 1; i < mIterNum; i++) {

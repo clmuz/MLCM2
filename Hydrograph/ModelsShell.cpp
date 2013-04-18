@@ -16,6 +16,7 @@ ModelsShell::ModelsShell() :
 	mWarmingDays(0),
 	mEtD(0),
 	mEtEE(1),
+	mEtWay(0),
 	mActiveModel(MT_MLCM)
 {
 	mDatBeg[0] = -1;
@@ -25,6 +26,7 @@ ModelsShell::ModelsShell() :
 	mP.clear();
 	mDat.clear();
 	mET.clear();
+	mAvET = new double [14];
 	mMlcm = new Mlcm();
 }
 
@@ -32,6 +34,7 @@ ModelsShell::~ModelsShell()
 {
 	delete mMlcm;
 	delete[] mOutput;
+	delete[] mAvET;
 }
 
 void ModelsShell::setFitnessClass(Fitness *fitn)
@@ -67,7 +70,7 @@ void ModelsShell::printPrediction(const int *begDate, const int *endDate)
 {
 	int dayBeg = makeTheGap(begDate, mPcpBeg);
 	int dayEnd = makeTheGap(endDate, mPcpBeg);
-	if ((dayBeg < 1) || (dayEnd * mMeasPerDay > mP.size()))
+	if ((dayBeg < 1) || (dayEnd * mMeasPerDay > (int) mP.size()))
 		throw(1);
 	ofstream rout(mOutput, ios::out);
 	if (!rout)
@@ -99,9 +102,9 @@ double ModelsShell::printPrediction(const int *begDate, const int *endDate, cons
 	int dayBeg = makeTheGap(begDate, mPcpBeg);
 	int dayEnd = makeTheGap(endDate, mPcpBeg);
 	if((--dayBeg < 0)
-		|| (--dayEnd * mMeasPerDay > mP.size())
+		|| (--dayEnd * mMeasPerDay > (int) mP.size())
 		|| (dayBeg - mGap < 0)
-		|| ((dayEnd - mGap - dayBeg + 1) * mMeasPerDay > mDat.size()))
+		|| ((dayEnd - mGap - dayBeg + 1) * mMeasPerDay > (int) mDat.size()))
 		throw(1);
 	ofstream rout(mOutput, ios::out);
 	if (!rout)
@@ -151,9 +154,9 @@ void ModelsShell::setFitnessBegEnd(const int *begDate, const int *endDate)
 	int begDay = makeTheGap(begDate, mPcpBeg);
 	int endDay = makeTheGap(endDate, mPcpBeg);
 	if((--begDay < 0)
-		|| (--endDay * mMeasPerDay > mP.size())
+		|| (--endDay * mMeasPerDay > (int) mP.size())
 		|| (begDay - mGap < 0)
-		|| ((endDay - mGap - begDay + 1) * mMeasPerDay > mDat.size()))
+		|| ((endDay - mGap - begDay + 1) * mMeasPerDay > (int) mDat.size()))
 		throw(1);
 	mFitness->setBegEnd(begDay, endDay);
 }
@@ -200,16 +203,20 @@ void ModelsShell::setOutFile(const wchar_t *outFileName)
 	mOutput = outFileName;
 }
 
-double ModelsShell::makeET(const int &day, const int &month, const double &p) const
+double ModelsShell::makeET(const int *date, const double &p) const
 {
+	if (!mEtWay) {
+		double nowDayPos = (double)date[0] / (double)giveDaysInMonth(date[1], date[2]);
+		return nowDayPos * (mAvET[date[1] + 1] - mAvET[date[1]]) + mAvET[date[1]];
+	}
 	if (p > 1e-3)
 		return 0;
 	//Есть ли сейчас снег
-	if ( ((month < mSnow[3]) || ((month == mSnow[3]) && (day <= mSnow[2])) ) 
-		|| ((month > mSnow[1]) || ((month == mSnow[1]) && (day >= mSnow[0])) ) )
+	if ( ((date[1] < mSnow[3]) || ((date[1] == mSnow[3]) && (date[0] <= mSnow[2])) ) 
+		|| ((date[1] > mSnow[1]) || ((date[1] == mSnow[1]) && (date[0] >= mSnow[0])) ) )
 		return 0;
 	//Две недели после снега
-	if ( (month < mSnow[5]) || ((month == mSnow[5]) && (day <= mSnow[4])) ) {
+	if ( (date[1] < mSnow[5]) || ((date[1] == mSnow[5]) && (date[0] <= mSnow[4])) ) {
 		return 0.44 * mEtEE;
 	}
 	return mEtEE * (1 - exp(-0.65 * mEtD / mEtEE));
@@ -226,22 +233,25 @@ int ModelsShell::getWarmingDays() const
 	return mWarmingDays;
 }
 
-void ModelsShell::readDeck(const wchar_t *filename)
+void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, const wchar_t *filename)
 {
 	ifstream deckIn (filename, ios::in);
 	if (!deckIn)
 		throw(3);
-	double Aslope, dt;
 	int nuh;
 	string str[8];
-	int i;
-	for (i = 0; i < 4; i++)
+	int i, j;
+	do {
+		getline(deckIn, str[0]);
+	} while (str[0][0] == '/');
+	for (i = 1; i < 4; i++)
 		getline(deckIn, str[i]);
 	if (str[3] == "") {
-		Aslope = atof(str[0].c_str());
-		dt = atof(str[1].c_str());
-		nuh = atof(str[2].c_str());
-		mMeasPerDay = 24.0 / dt;
+		mFbasin = atof(str[0].c_str()) * fbasinFormat;
+		mAslope = sqrt(mFbasin) / 2;
+		mMeasPerDay = (int) atof(str[1].c_str());
+		nuh = (int) atof(str[2].c_str());
+		mEtWay = 1;
 		mEtD = 0;
 		mEtEE = 1;
 		for (int i = 0; i < 6; i++) {
@@ -252,11 +262,13 @@ void ModelsShell::readDeck(const wchar_t *filename)
 		for (i = 4; i <= 6; i++)
 			getline(deckIn, str[i]);
 		if (str[6] == "") {
-			Aslope = atof(str[0].c_str());
-			dt = atof(str[1].c_str());
-			nuh = atof(str[2].c_str());
-			mMeasPerDay = 24.0 / dt;
-			stringstream etParam (str[3]);
+			mFbasin = atof(str[0].c_str()) * fbasinFormat;
+			mAslope = sqrt(mFbasin) / 2;
+			mMeasPerDay = (int) atof(str[1].c_str());
+			nuh = (int) atof(str[2].c_str());
+			stringstream etParam (str[3].c_str());
+			string s = etParam.str();
+			mEtWay = 1;
 			etParam >> mEtD >> mEtEE;
 			stringstream snow1 (str[4]), snow2 (str[5]);
 			snow1 >> mSnow[0] >> mSnow[1];
@@ -278,14 +290,26 @@ void ModelsShell::readDeck(const wchar_t *filename)
 			stringstream dtstream (str[2]);
 			dtstream.seekg(53);
 			dtstream >> mMeasPerDay;
-			stringstream aslopeAndNuh (str[7]);
-			aslopeAndNuh.seekg(29);
-			aslopeAndNuh >> Aslope >> nuh;
-			mEtD = 0;
-			mEtEE = 1;
+			stringstream basinAndNuh (str[7]);
+			basinAndNuh.seekg(29);
+			mEtWay = 0;
+			basinAndNuh >> mFbasin >> nuh;
+			mFbasin *= fbasinFormat;
+			mAslope = sqrt(mFbasin) / 2;
+			stringstream et (str[5]);
+			et.seekg(20);
+			string etStr = "    ";
+			for (i = 0; i < 12; i++) {
+				for (j = 0; j < 4; j++) {
+					et >> etStr[j];
+				}
+				mAvET[i + 1] = etFormat * atof(etStr.c_str()) / (double) mMeasPerDay;
+				etStr = "    ";
+			}
+			mAvET[0] = mAvET[12];
+			mAvET[13] = mAvET[1];
 		}
 	}
-	mAslope = Aslope * 1000;
 	mMlcm->setAslopeAndNuh(mAslope, nuh);
 	mFitness->setMeasPerDay(mMeasPerDay);
 	mMlcm->setWarmingSteps(mWarmingDays * mMeasPerDay);
@@ -314,7 +338,9 @@ void ModelsShell::readInFormat(ifstream &fin, int &code, int &month, int &day, d
 void ModelsShell::readAndSetFormat(ifstream &fin, int &code, int &month, int &day, double &value)
 {
 	string line;
-	getline(fin, line);
+	do {
+		getline(fin, line);
+	} while (line[0] == '/');
 	stringstream l1(line), l2(line), l3(line);
 	if (l1 >> code >> month >> day >> value) {
 		mInfileFormat = 1;
@@ -349,18 +375,19 @@ void ModelsShell::writeOutFormat(ofstream &fout, const int *date, const int &i, 
 		fout << value;
 		return;
 	case 4:
-		fout << nMonth << " " << date[0] << " " << mP[begPoint + i] * mOutFormat << " "
+		fout << nMonth << " " << date[0] << " " << (max(0., mP[begPoint + i] - mET[begPoint + i])) * mOutFormat << " "
 			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
 		return;
 	case 5:
 		fout << nMonth << " " << date[0] << " " << mP[begPoint + i] * mOutFormat << " " << mET[begPoint + i] * mOutFormat << " "
 			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
+		return;
 	}
 }
 
 double ModelsShell::getRealData(const int &i) const
 {
-	if ((i < 0) || (i >= mDat.size()))
+	if ((i < 0) || (i >= (int) mDat.size()))
 		return 0;
 	return mDat[i];
 }
@@ -389,17 +416,19 @@ void ModelsShell::readPcp(const double &format, const wchar_t *filename)
 	nowDate[0] = day;
 	nowDate[1] = month / 100;
 	nowDate[2] = month % 100;
-	mET.push_back(makeET(nowDate[0], nowDate[1], mP.back()));
+	mET.push_back(makeET(nowDate, mP.back()));
 	int i = 1;
 	while (!pcpIn.ios::eof()) {
 		if (i % mMeasPerDay == 0)
 			incDate(nowDate);
 		readInFormat(pcpIn, code, month, day, tmp);
-		mP.push_back(tmp * mPcpFormat);
-		mET.push_back(makeET(nowDate[0], nowDate[1], mP.back()));
+		tmp *= mPcpFormat;
+		mET.push_back(makeET(nowDate, tmp) * mFbasin);
+		mP.push_back(tmp * mFbasin);
 		if (i++ == 1000000) {
 			pcpIn.close();
 			mP.clear();
+			mET.clear();
 			delete[] nowDate;
 			throw(0);
 		}

@@ -10,20 +10,14 @@ AbsoluteSquareError::AbsoluteSquareError(ModelsShell *modShell) :
 
 double AbsoluteSquareError::countError() const
 {
-	int beg = mDayBeg * mMeasPerDay;
-	vector<double> modVal;
-	modVal = mShell -> makeRunoff(mDayBeg, mDayEnd);
-	double sum = 0;
-	for (int i = 0; i < modVal.size(); i++)
-		sum += pow(modVal[i] - (*mRealVal)[i + beg], 2);
-	return sqrt(sum / modVal.size());
+	return countError(mShell -> makeRunoff(mDayBeg, mDayEnd));
 }
 
 double AbsoluteSquareError::countError(const vector<double> &modVal) const
 {
 	int beg = (mGap + mDayBeg) * mMeasPerDay;
 	double sum = 0;
-	for (int i = 0; i < modVal.size(); i++)
+	for (unsigned int i = 0; i < modVal.size(); i++)
 		sum += pow(modVal[i] - (*mRealVal)[i + beg], 2);
 	return sqrt(sum / modVal.size());
 }

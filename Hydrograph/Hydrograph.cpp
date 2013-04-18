@@ -154,19 +154,19 @@ void Hydrograph::setOutFile(const wchar_t *outFileName)
 	mShell->setOutFile(outFileName);
 }
 
-void Hydrograph::readDeck(const wchar_t *filename)
+void Hydrograph::readDeck(const double fbasinFormat, const double etFormat, const wchar_t *filename)
 {
-	mShell->readDeck(filename);
+	mShell->readDeck(fbasinFormat, etFormat, filename);
 }
 
-void Hydrograph::readPcp(const double format, const wchar_t *filename)
+void Hydrograph::readPcp(const double pcpFormat, const wchar_t *filename)
 {
-	mShell->readPcp(format, filename);
+	mShell->readPcp(pcpFormat, filename);
 }
 
-void Hydrograph::readDat(const double format, const wchar_t *filename)
+void Hydrograph::readDat(const double qFormat, const wchar_t *filename)
 {
-	mShell->readDat(format, filename);
+	mShell->readDat(qFormat, filename);
 }
 
 int Hydrograph::click()

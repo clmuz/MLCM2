@@ -186,7 +186,7 @@ void NelderMead::setKoeffs(const double &koeff1, const double &koeff2)
 
 void NelderMead::setKoeffs(const vector<double> &koeffs)
 {
-	mComplexNum = floor(koeffs.size() * 0.5);
+	mComplexNum = (int) floor(koeffs.size() * 0.5);
 	mKoeffs = koeffs;
 	if (mComplexNum < 1) {
 		mComplexNum = 1;

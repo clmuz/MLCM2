@@ -33,8 +33,6 @@ private:
 	void saveConfig(const wchar_t *configName);
 	//Функция, вызывающая окно Загрузить-сохранить и конвертирующая в нужный тип название файла
 	bool doFileName(bool loadFile, CString &edit_str, const CString &format);
-	//Функция, по комбобоксу выдающая размерность данных
-	double doComboFormats(const CString &combo);
 	//По дате выдающая дату в формате int[3] день - месяц - год
 	int *doDate(const COleDateTime &date);
 	//Обработчик эксепшенов
@@ -55,8 +53,6 @@ private:
 	//Переменные окна и обработчики событий
 	CString mSaveSett;
 	CString mLoadSett;
-	CString mComboPcp;
-	CString mComboDat;
 	CString mEditPcp;
 	CString mEditDeck;
 	CString mEditDat;
@@ -66,7 +62,6 @@ private:
 	COleDateTime mValTo;
 	COleDateTime mModFrom;
 	COleDateTime mModTo;
-	int mInFormat;
 	int mOutFormat;
 	CString mOutFile;
 	CString mSaveMlcm;
@@ -75,6 +70,8 @@ private:
 	COleDateTime mModValFrom;
 	COleDateTime mModValTo;
 	int mWarmingDays;
+	int mComboFormat;
+	double mEtFormat, mQFormat, mPcpFormat, mFbasinFormat;
 public:
 	afx_msg void OnBnClickedTune();
 	afx_msg void OnBnClickedMaininfo();
@@ -106,4 +103,5 @@ public:
 	afx_msg void OnBnClickedClearout();
 	afx_msg void OnBnClickedClearsavemlcm();
 	afx_msg void OnBnClickedClearloadmlcm();
+	afx_msg void OnCbnSelchangeFormat();
 };

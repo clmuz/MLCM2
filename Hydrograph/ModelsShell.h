@@ -48,7 +48,7 @@ public:
 	//Задать выходной файл
 	void setOutFile(const wchar_t *outFileName);
 	//Загрузить данные о водосборе
-	void readDeck(const wchar_t *filename);
+	void readDeck(const double fbasinFormat, const double etFormat, const wchar_t *filename);
 	//Загрузить файл с осдаками
 	void readPcp(const double &format, const wchar_t *filename);
 	//Загрузить файл с релаьными значениями
@@ -66,7 +66,7 @@ public:
 	int getIterNum() const;
 private:
 	//Выдает испарения в данный момент
-	double makeET(const int &day, const int &month, const double &p) const;
+	double makeET(const int *date, const double &p) const;
 	//Считает разницу в днях между двумя датами в формате int[3] - день-месяц-год
 	int makeTheGap(const int *date1, const int *date2) const;
 	//Возвращает количество дней в месяце
@@ -88,7 +88,9 @@ private:
 	//Целевые функции
 	Fitness *mFitness;
 	//Длина склона
-	int mAslope;
+	double mAslope;
+	//Площадь водосбора
+	double mFbasin;
 	//Количество измерений в день
 	int mMeasPerDay;
 	//Формат входных данных
@@ -117,6 +119,10 @@ private:
 	double mDatFormat;
 	//Размерность выходных данных
 	double mOutFormat;
+	//Способ задания испарений - 0 - через среднемесячные значения, 1 - через EE и d
+	bool mEtWay;
+	//Среднемесячные испарения
+	double *mAvET;
 	//Испаряемость
 	double mEtEE;
 	//Среднесуточное значение дефицита влажности
@@ -125,4 +131,3 @@ private:
 	//Две недели от снега: 4 - день, 5 - месяц
 	int mSnow[6];
 };
-

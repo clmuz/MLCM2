@@ -35,33 +35,37 @@ double SLS::doCalibration(const int &paramsNum, double *bestParams)
 	int i;
 	int it = 0;
 	bool stop = 0;
+	double step;
 	for (i = 0; i < paramsNum; i++) {
 		paramCounter[i] = 0;
 	}
-	while ((!stop) && (it++ < mLim)) {
-		stop = 1;
-		for (i = 0; i < paramsNum; i++) {
-			if (paramCounter[i]++ < 3) {
-				bestParams[i] -= mStep;
-				fLeft = countF(bestParams, paramsNum);
-				bestParams[i] += 2.0 * mStep;
-				fRight = countF(bestParams, paramsNum);
-				if ((fLeft >= f) && (fRight >= f)) {
-					bestParams[i] -= mStep;
-					continue;
-				}
-				stop = 0;
-				paramCounter[i] = 0;
-				if (fLeft < f) {
-					if (fRight < fLeft) {
-						f = fRight;
+	for (int stepRatio = 1; stepRatio <= 3; stepRatio++) {
+		step = mStep / stepRatio;
+		while ((!stop) && (it++ < mLim)) {
+			stop = 1;
+			for (i = 0; i < paramsNum; i++) {
+				if (paramCounter[i]++ < 3) {
+					bestParams[i] -= step;
+					fLeft = countF(bestParams, paramsNum);
+					bestParams[i] += 2.0 * step;
+					fRight = countF(bestParams, paramsNum);
+					if ((fLeft >= f) && (fRight >= f)) {
+						bestParams[i] -= step;
 						continue;
 					}
-					f = fLeft;
-					bestParams[i] -= 2.0 * mStep;
-					continue;
+					stop = 0;
+					paramCounter[i] = 0;
+					if (fLeft < f) {
+						if (fRight < fLeft) {
+							f = fRight;
+							continue;
+						}
+						f = fLeft;
+						bestParams[i] -= 2.0 * step;
+						continue;
+					}
+					f = fRight;
 				}
-				f = fRight;
 			}
 		}
 	}

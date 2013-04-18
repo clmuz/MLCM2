@@ -16,8 +16,6 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CMLCMDlg::IDD, pParent)
 	, mSaveSett(_T(""))
 	, mLoadSett(_T(""))
-	, mComboPcp(_T(""))
-	, mComboDat(_T(""))
 	, mEditPcp(_T(""))
 	, mEditDeck(_T(""))
 	, mEditDat(_T(""))
@@ -35,6 +33,11 @@ CMLCMDlg::CMLCMDlg(CWnd* pParent /*=NULL*/)
 	, mModValFrom(COleDateTime::GetCurrentTime())
 	, mModValTo(COleDateTime::GetCurrentTime())
 	, mWarmingDays(0)
+	, mComboFormat(0)
+	, mEtFormat(1)
+	, mPcpFormat(1)
+	, mQFormat(1)
+	, mFbasinFormat(1)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	mIsDeck = 0;
@@ -82,6 +85,8 @@ void CMLCMDlg::loadConfig(const wchar_t *configName)
 	confin >> calType >> fitnType >> valType;
 	mH->setCalibrationType(doCalibrationType(calType));
 	mH->setFitnessType(doFitnessType(fitnType), doFitnessType(valType));
+	confin >> mComboFormat;
+	OnCbnSelchangeFormat();
 	confin >> mOutFormat;
 	mH->setOutFormat(mOutFormat--);
 	confin >> mWarmingDays;
@@ -138,6 +143,7 @@ void CMLCMDlg::saveConfig(const wchar_t *configName)
 	fitnessType defFitnType, valType;
 	mH->getCalAndFitnessTypes(calType, defFitnType, valType);
 	confout << (int)calType << " " << (int)defFitnType << " " << (int)valType << endl;
+	confout << mComboFormat << endl;
 	confout << mH->getOutFormat() << endl;
 	confout << mH->getWarmingDays() << endl;
 	int maxA[11], maxZ[10];
@@ -201,8 +207,6 @@ void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Text(pDX, Edit_SaveSett, mSaveSett);
 	DDX_Text(pDX, Edit_LoadSett, mLoadSett);
-	DDX_CBString(pDX, Combo_pcp, mComboPcp);
-	DDX_CBString(pDX, Combo_dat, mComboDat);
 	DDX_Text(pDX, Edit_pcp, mEditPcp);
 	DDX_Text(pDX, Edit_deck, mEditDeck);
 	DDX_Text(pDX, Edit_dat, mEditDat);
@@ -220,6 +224,7 @@ void CMLCMDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_DateTimeCtrl(pDX, Date_ModValFrom, mModValFrom);
 	DDX_DateTimeCtrl(pDX, Date_ModValTo, mModValTo);
 	DDX_Text(pDX, Edit_WarmingDays, mWarmingDays);
+	DDX_CBIndex(pDX, Combo_Format, mComboFormat);
 }
 
 BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
@@ -256,6 +261,7 @@ BEGIN_MESSAGE_MAP(CMLCMDlg, CDialogEx)
 	ON_BN_CLICKED(Button_ClearOut, &CMLCMDlg::OnBnClickedClearout)
 	ON_BN_CLICKED(Button_ClearSaveMlcm, &CMLCMDlg::OnBnClickedClearsavemlcm)
 	ON_BN_CLICKED(Button_ClearLoadMlcm, &CMLCMDlg::OnBnClickedClearloadmlcm)
+	ON_CBN_SELCHANGE(Combo_Format, &CMLCMDlg::OnCbnSelchangeFormat)
 END_MESSAGE_MAP()
 
 
@@ -370,6 +376,7 @@ void CMLCMDlg::OnBnClickedConfiginfo()
 	text += L"Данные по умолчанию хранятся в default.config\n";
 	text += L"Через пробелы три значения - используемая калибровка (0 - Нелдер-Мид, 1 - расширенный Нелдер-Мид, 2 - SLS, 3 - перебор), ";
 	text += L"используемая целевая функция и функция для валидации (и для того, и для другого 0 - MSOF, 1 - среднеквадратическая ошибка)\n";
+	text += L"Размерности входных данных, 0 - RUS, 1 - US\n";
 	text += L"Формат выходных файлов (справку для форматов можете посмотреть в информации для выходных файлов)\n";
 	text += L"Количество дней прогрева модели\n";
 	text += L"Ограничение на скорость трансформации паводочной волны, через пробел, сверху и снизу (0-1)\n";
@@ -402,8 +409,8 @@ void CMLCMDlg::OnBnClickedDeckinfo()
 {
 	CString text = L"Информация по файлу с данными о водосборе (*.deck)\n\n";
 	text += L"Кроме обычного формата существуют два кратких:\n\n";
-	text += L"  Длина склона (в км)\n  Дискретность (шаг) по времени выхода модели ";
-	text += L"(в часах, нацело делит 24, то есть 7 часов не подойдет, а 6 или 0.5 подойдет)\n";
+	text += L"  Площадь водосбора\n  Дискретность модели -";
+	text += L"Колчиство измерений в день\n";
 	text += L"  Максимальное число ординат единичного гидрографа\n";
 	text += L"Здесь файл может закончиться, тогда испарения считаются нулевыми\n";
 	text += L"  Cреднесуточное значений дефицита влажности, гПа и Испаряемость через пробел\n";
@@ -418,10 +425,11 @@ void CMLCMDlg::OnBnClickedDeckinfo()
 void CMLCMDlg::OnBnClickedInoutformatinfo()
 {
 	CString text = L"Информация по форматам входных и выходных данных\n\n";
-	text += L"1: Код - месяц - день - данные\n2: Месяц - день - данные\n3: Данные (началом считается 1 января 2013)\n4: (Только для выходных данных)\n";
-	text += L"   Месяц - день - осадки - реальные данные - смоделированные данные\n";
-	text += L"5: (Только для выходных данных)\n";
-	text += L"   Месяц - день - осадки - испарения - реальные данные - смоделированные данные\n\n";
+	text += L"1: Код - месяц - день - данные\n2: Месяц - день - данные\n3: Данные (началом считается 1 января 2013)\n";
+	text += L"4 (для таблиц): (Только для выходных данных)\n";
+	text += L"   Месяц - день - осадки минус испарения - фактические данные - смоделированные данные\n";
+	text += L"5 (для таблиц плюс испарения): (Только для выходных данных)\n";
+	text += L"   Месяц - день - осадки - испарения - фактические данные - смоделированные данные\n\n";
 	text += L"Месяц в формате первая одна-две цифры - номер месяца, вторые две - год, то есть 396 - март 1996, а 1201 - декабрь 2001\n";
 	text += L"Может оказаться, что во входных данных вместо дня стоит час. Не обязательно все переделывать, главное, чтобы в";
 	text += L" первой строчке правильно стоял номер дня в месяце";
@@ -487,31 +495,12 @@ void CMLCMDlg::OnBnClickedoutputfile()
 	}
 }
 
-double CMLCMDlg::doComboFormats(const CString &combo)
-{
-	UpdateData(1);
-	if (combo == "миллиметр/час") {
-		return 1;
-	}
-	if (combo == "дюйм/час") {
-		return 25.4;
-	}
-	if (combo == "фут/час") {
-		return 304.8;
-	}
-	double value = _wtof(combo);
-	if (value == 0)
-		return 1;
-	else
-		return value;
-}
-
 
 void CMLCMDlg::OnBnClickeddeck()
 {
 	if (doFileName(1, mEditDeck, L".deck")) {
 		mIsDeck = 1;
-		mH->readDeck((const wchar_t *) mEditDeck);
+		mH->readDeck(mFbasinFormat, mEtFormat, (const wchar_t *) mEditDeck);
 	}
 }
 
@@ -524,9 +513,8 @@ void CMLCMDlg::OnBnClickedpcp()
 		return;
 	}
 	if (doFileName(1, mEditPcp, L".pcp")) {
-		double pcpFormat = doComboFormats(mComboPcp);
 		try {
-			mH->readPcp(pcpFormat, (const wchar_t *) mEditPcp);
+			mH->readPcp(mPcpFormat, (const wchar_t *) mEditPcp);
 			mIsPcp = 1;
 		}
 		catch (const int &a) {
@@ -543,9 +531,8 @@ void CMLCMDlg::OnBnClickeddat()
 		return;
 	}
 	if (doFileName(1, mEditDat, L".dat")) {
-		double datFormat = doComboFormats(mComboDat);
 		try {
-			mH->readDat(datFormat, (const wchar_t *) mEditDat);
+			mH->readDat(mQFormat, (const wchar_t *) mEditDat);
 		}
 		catch (const int &a) {
 			printError(a);
@@ -772,4 +759,24 @@ void CMLCMDlg::OnBnClickedClearloadmlcm()
 {
 	mLoadMlcm = L"";
 	UpdateData(0);
+}
+
+void CMLCMDlg::OnCbnSelchangeFormat()
+{
+	switch (mComboFormat) {
+	//RUS
+	case 0:
+		mPcpFormat =  2.7777778e-7;	// мм/час
+		mEtFormat = 2.7777778e-7;	// мм/час
+		mQFormat = 1;			// м3/с
+		mFbasinFormat = 1e6;	// км2
+		break;
+	//US
+	case 1:
+		mPcpFormat = 7.05555556e-6;	// inch/hour
+		mEtFormat = 7.05555556e-6;		// inch/hour
+		mQFormat = 0.0283168466;	// foot3/s
+		mFbasinFormat = 2.58998811e6;	// mi2
+		break;
+	}
 }
