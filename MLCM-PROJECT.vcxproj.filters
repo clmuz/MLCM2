@@ -98,9 +98,6 @@
     <ClCompile Include="Hydrograph\Gamma.cpp">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClCompile>
-    <ClCompile Include="Hydrograph\Hydrograph.cpp">
-      <Filter>Заголовочные файлы\Hydrograph</Filter>
-    </ClCompile>
     <ClCompile Include="Hydrograph\Mlcm.cpp">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClCompile>
@@ -108,9 +105,6 @@
       <Filter>Заголовочные файлы\Hydrograph\Fitness</Filter>
     </ClCompile>
     <ClCompile Include="Hydrograph\Fitness\Fitness.cpp">
-      <Filter>Заголовочные файлы\Hydrograph\Fitness</Filter>
-    </ClCompile>
-    <ClCompile Include="Hydrograph\Fitness\Msof.cpp">
       <Filter>Заголовочные файлы\Hydrograph\Fitness</Filter>
     </ClCompile>
     <ClCompile Include="Hydrograph\Calibration\Calibration.cpp">
@@ -141,6 +135,12 @@
       <Filter>Заголовочные файлы\Hydrograph\Calibration</Filter>
     </ClCompile>
     <ClCompile Include="Hydrograph\ModelsShell.cpp">
+      <Filter>Заголовочные файлы\Hydrograph</Filter>
+    </ClCompile>
+    <ClCompile Include="Hydrograph\Fitness\Msof.cpp">
+      <Filter>Заголовочные файлы\Hydrograph\Fitness</Filter>
+    </ClCompile>
+    <ClCompile Include="Hydrograph\Hydrograph.cpp">
       <Filter>Заголовочные файлы\Hydrograph</Filter>
     </ClCompile>
   </ItemGroup>

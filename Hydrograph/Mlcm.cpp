@@ -5,7 +5,7 @@
 #include "Gamma.h"
 #include "Mlcm.h"
 
-Mlcm::Mlcm() :
+Mlcm::Mlcm(vector<double> *PminusET) :
 	mRealBeg(0),
 	mRealEnd(0),
 	mN(0),
@@ -15,25 +15,22 @@ Mlcm::Mlcm() :
 	mT(0),
 	mWarmingSteps(0),
 	mMinC(0.5),
-	mMaxC(1)
+	mMaxC(1),
+	mPminusET(PminusET)
 {
 	mClick = new int (0);
 	mAlpha = new double [11];
 	mZ = new double [10];
 	mMaxA = new double [11];
-	mMaxAS = new double [11];
 	int i;
 	for (i = 0; i < 11; i++) {
-		mAlpha[i] = 100.;
-		mMaxA[i] = 100.;
-		mMaxAS[i] = 1.;
+		mAlpha[i] = 1.;
+		mMaxA[i] = 1.;
 	}
 	mMaxZ = new double [10];
-	mMaxZS = new double [10];
 	for (i = 0; i < 10; i++) {
-		mZ[i] = 100.;
-		mMaxZ[i] = 100.;
-		mMaxZS[i] = 10.;
+		mZ[i] = 1.;
+		mMaxZ[i] = 1.;
 	}
 }
 
@@ -42,38 +39,26 @@ Mlcm::~Mlcm()
 	delete mClick, mMaxA, mMaxZ, mAlpha, mZ;
 }
 
-void Mlcm::setAslopeAndNuh(const double &fbasin, const int &nuh)
+void Mlcm::setNuh(const int &nuh)
 {
-	mFbasin = fbasin;
 	mNuh = nuh;
 	mNOrd = mNuh + (int) ceil(mT);
 	makeHydrOrd();
-	mMaxAS[0] = mMaxA[0] * mFbasin;
-	for (int i = 0; i < 10; i++) {
-		mMaxAS[i + 1] = mMaxA[i + 1] * mFbasin;
-		mMaxZS[i] = mMaxZ[i] * mFbasin;
-	}
 }
 
 void Mlcm::setParam(const double *params)
 {
-	mAlpha[0] = mMaxAS[0] * params[0];
+	mAlpha[0] = mMaxA[0] * params[0];
 	mC = mMinC + (mMaxC - mMinC) * params[1];
 	mK = 1 + 19 * params[2];
 	mEtta = 1 + 4 * params[3];
 	mT = 24 * params[4];
 	mNOrd = mNuh + (int) ceil(mT);
 	for (int i = 0; i < mN; i++) {
-		mAlpha[i + 1] = mMaxAS[i + 1] * params[5 + 2 * i];
-		mZ[i] = mMaxZS[i] * params[6 + 2 * i];
+		mAlpha[i + 1] = mMaxA[i + 1] * params[5 + 2 * i];
+		mZ[i] = mMaxZ[i] * params[6 + 2 * i];
 	}
 	makeHydrOrd();
-}
-
-void Mlcm::setPandET(vector<double> *P, vector<double> *ET)
-{
-	mP = P;
-	mET = ET;
 }
 
 void Mlcm::setRealData(vector<double> *realData, const int &realDatBeg)
@@ -98,7 +83,7 @@ vector<double> Mlcm::makeRunoff(const int &timeBeg, const int &timeEnd) const
 	int i;
 	int WarmingBeg = max (timeBeg - mWarmingSteps, 0);
 	for (i = WarmingBeg; i < timeEnd; i++) {
-		Qsum.push_back(makeStep((*mP)[i], (*mET)[i], state));
+		Qsum.push_back(makeStep((*mPminusET)[i], state));
 	}
 	vector<double> Q;
 	int a2 = min(mRealBeg + 1, timeEnd);
@@ -142,41 +127,33 @@ double Mlcm::countUhT(const vector<double> &Qsum, const int &time) const
 	return sum;
 }
 
-double Mlcm::makeStep(const double &P
-					  , const double &ET
-					  , vector<double> &state) const
+double Mlcm::makeStep(double P, vector<double> &state) const
 {
-	if (P <= ET)
-		return countChannelWater(state);
-	double P0 = P - ET;
-	if (mN == 0) {
-		state[0] += P0;
-	}
-	else {
-		if (P0 > mAlpha[1]) {
-			state[0] += P0 - mAlpha[0];
-			P0 = mAlpha[1];
+	if (P != 0.) {
+		if (mN == 0) {
+			state[0] += P;
 		}
-		for (int i = 1; i <= mN; i++) {
-			if (P0 + state[i] < mZ[i - 1]) {
-				state[i] += P0;
-				break;
+		else {
+			if (P > mAlpha[1]) {
+				state[0] += P - mAlpha[0];
+				P = mAlpha[1];
 			}
-			if (i == mN) {
-				state[i] = P0;
-				break;
-			}
-			if (P0 > mAlpha[i + 1]) {
-				state[i] = P0 - mAlpha[i + 1];
-				P0 = mAlpha[i + 1];
+			for (int i = 1; i <= mN; i++) {
+				if (P + state[i] < mZ[i - 1]) {
+					state[i] += P;
+					break;
+				}
+				if (i == mN) {
+					state[i] = P;
+					break;
+				}
+				if (P > mAlpha[i + 1]) {
+					state[i] = P - mAlpha[i + 1];
+					P = mAlpha[i + 1];
+				}
 			}
 		}
 	}
-	return countChannelWater(state);
-}
-
-double Mlcm::countChannelWater(vector<double> &state) const
-{
 	double sum = 0;
 	for (int i = 0; i <= mN; i++) {
 		sum += min(state[i], mAlpha[i]);

@@ -81,12 +81,15 @@ private:
 	double getRealData(const int &i) const;
 	//Инкремент даты
 	void incDate(int *date) const;
+	//Посчитать площадь склона, при которой средние по фактическим данным и осадкам (после вычета испарений) будут равны
+	//И затем задает осадки минус испарения, умноженные на площадь склона
+	void setPminusET();
 	//Активная модель
 	modelType mActiveModel;
 	//MLCM
 	Mlcm *mMlcm;
 	//Целевые функции
-	Fitness *mFitness;;
+	Fitness *mFitness;
 	//Площадь водосбора
 	double mFbasin;
 	//Количество измерений в день
@@ -109,6 +112,8 @@ private:
 	vector<double> mP;
 	//Испарения
 	vector<double> mET;
+	//Осадки минус испарения, все умноженное на площадь водосбора
+	vector<double> mPminusET;
 	//Реальные данные
 	vector<double> mDat;
 	//Размерность осадков (на сколько надо умножить, чтобы получить мм/ч)

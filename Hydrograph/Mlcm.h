@@ -9,10 +9,10 @@ using namespace std;
 class Mlcm
 {
 public:
-	Mlcm();
+	Mlcm(vector<double> *PminusET);
 	~Mlcm();
-	//Установить длину склона и количество ординат единичного гидрографа
-	void setAslopeAndNuh(const double &faslope, const int &nuh);
+	//Установить количество ординат единичного гидрографа
+	void setNuh(const int &nuh);
 	//Установить реальные данные и их начало
 	void setRealData(vector<double> *realData, const int &realDatBeg);
 	//Установить количество слоев
@@ -20,8 +20,6 @@ public:
 	int getN() const;
 	//Установить параметы модели
 	void setParam(const double *params);
-	//Установить осадки и испарения
-	void setPandET(vector<double> *P, vector<double> *ET);
 	//Установить количество шагов прогрева модели
 	void setWarmingSteps(const int &countOfWarmingSteps);
 	//Узнать количество шагов прогрева модели
@@ -36,19 +34,15 @@ public:
 	vector<double> makeRunoff(const int &timeBeg, const int &timeEnd) const;
 	//Сколько раз запускалась MLCM с момента последнего клика
 	int click();
-	void printParams(const wchar_t *outputParamFile) const; //TODO
-	void loadParams(const wchar_t *inputParamFile); //TODO
+	void printParams(const wchar_t *outputParamFile) const;
+	void loadParams(const wchar_t *inputParamFile);
 private:
 	//Задает ординаты единичного гидрографа
 	void makeHydrOrd();
 	//Считает Qsum в момент времени time
 	double countUhT(const vector<double> &Qsum, const int &time) const;
 	//Один шаг модели (шаг = 24/<количество измерений в день>)
-	double makeStep(const double &P
-					, const double &ET
-					, vector<double> &state) const;
-	//Сколько воды дошло до конца склона в момент времени time
-	double countChannelWater(vector<double> &state) const;
+	double makeStep(double P, vector<double> &state) const;
 	//Количество слоев
 	int mN;
 	//Количество ординат с учетом сдвига по времени
@@ -70,24 +64,20 @@ private:
 	double mK;
 	//Сдвиг по времени
 	double mT;
-	//Площадь склона
-	double mFbasin;
 	//Ординаты единичного гидрографа
 	vector<double> mFxOrd;
 	//Вектор скоростей через слои
 	double *mAlpha;
 	//Вектор ширин слоев
 	double *mZ;
-	//Осадки
-	vector<double> *mP;
-	//Испарения
-	vector<double> *mET;
+	//Осадки с вычетом испарений
+	vector<double> *mPminusET;
 	//Реальные данные
 	vector<double> *mRealData;
-	//Ограничения на скорости через слои и на скорости, помноженные на площадь (0 - поверхностный, 10 - 10-ый слой)
-	double *mMaxA, *mMaxAS;
-	//Ограничения на ширины слоев (0 - 1 слой)
-	double *mMaxZ, *mMaxZS;
+	//Ограничения на скорости через слои (м3/с) (0 - поверхностный, 10 - 10-ый слой)
+	double *mMaxA;
+	//Ограничения на ширины слоев (м3) (0 - 1-ый слой)
+	double *mMaxZ;
 	//Ограничения на скорость трансформации паводочной волны
 	double mMinC, mMaxC;
 };

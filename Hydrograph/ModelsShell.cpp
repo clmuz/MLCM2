@@ -17,7 +17,8 @@ ModelsShell::ModelsShell() :
 	mEtD(0),
 	mEtEE(1),
 	mEtWay(0),
-	mActiveModel(MT_MLCM)
+	mActiveModel(MT_MLCM),
+	mFbasin(1.)
 {
 	mDatBeg[0] = -1;
 	for (int i = 0; i < 6; i++) {
@@ -27,7 +28,7 @@ ModelsShell::ModelsShell() :
 	mDat.clear();
 	mET.clear();
 	mAvET = new double [14];
-	mMlcm = new Mlcm();
+	mMlcm = new Mlcm(&mPminusET);
 }
 
 ModelsShell::~ModelsShell()
@@ -70,13 +71,13 @@ void ModelsShell::printPrediction(const int *begDate, const int *endDate)
 {
 	int dayBeg = makeTheGap(begDate, mPcpBeg);
 	int dayEnd = makeTheGap(endDate, mPcpBeg);
-	if ((dayBeg < 1) || (dayEnd * mMeasPerDay > (int) mP.size()))
+	if ((--dayBeg < 0) || (--dayEnd * mMeasPerDay > (int) mP.size()))
 		throw(1);
 	ofstream rout(mOutput, ios::out);
 	if (!rout)
 		throw(3);
 	vector<double> res;
-	res = makeRunoff(dayBeg - 1, dayEnd);
+	res = makeRunoff(dayBeg, dayEnd);
 	rout.setf(ios::fixed, ios::floatfield);
 	rout.precision(3);
 	int *nowDate = new int [3];
@@ -84,7 +85,7 @@ void ModelsShell::printPrediction(const int *begDate, const int *endDate)
 	nowDate[1] = begDate[1];
 	nowDate[2] = begDate[2];
 	int i;
-	for (i = 0; i < (dayEnd - dayBeg) * mMeasPerDay - 1; i++) {
+	for (i = 0; i < (1 + dayEnd - dayBeg) * mMeasPerDay - 1; i++) {
 		if (i % mMeasPerDay == 0)
 			incDate(nowDate);
 		writeOutFormat(rout, nowDate, i, dayBeg * mMeasPerDay, res[i]);
@@ -110,7 +111,7 @@ double ModelsShell::printPrediction(const int *begDate, const int *endDate, cons
 	if (!rout)
 		throw(3);
 	vector<double> res;
-	res = makeRunoff(dayBeg - 1, dayEnd);
+	res = makeRunoff(dayBeg, dayEnd);
 	rout.setf(ios::fixed, ios::floatfield);
 	rout.precision(3);
 	double val;
@@ -248,8 +249,8 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 		getline(deckIn, str[i]);
 	if (str[3] == "") {
 		mFbasin = atof(str[0].c_str()) * fbasinFormat;
-		mMeasPerDay = (int) atof(str[1].c_str());
-		nuh = (int) atof(str[2].c_str());
+		mMeasPerDay = atoi(str[1].c_str());
+		nuh = atoi(str[2].c_str());
 		mEtWay = 1;
 		mEtD = 0;
 		mEtEE = 1;
@@ -262,8 +263,8 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 			getline(deckIn, str[i]);
 		if (str[6] == "") {
 			mFbasin = atof(str[0].c_str()) * fbasinFormat;
-			mMeasPerDay = (int) atof(str[1].c_str());
-			nuh = (int) atof(str[2].c_str());
+			mMeasPerDay = atoi(str[1].c_str());
+			nuh = atoi(str[2].c_str());
 			stringstream etParam (str[3].c_str());
 			string s = etParam.str();
 			mEtWay = 1;
@@ -286,15 +287,16 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 			if(str[7] == "")
 				throw(0);
 			stringstream dtstream (str[2]);
-			dtstream.seekg(53);
+			dtstream.seekg(53, dtstream.beg);
 			dtstream >> mMeasPerDay;
 			stringstream basinAndNuh (str[7]);
-			basinAndNuh.seekg(29);
+			basinAndNuh.seekg(29, basinAndNuh.beg);
 			mEtWay = 0;
 			basinAndNuh >> mFbasin >> nuh;
+			//mFbasin *= 0.0005;						//TODO
 			mFbasin *= fbasinFormat;
 			stringstream et (str[5]);
-			et.seekg(20);
+			et.seekg(20, et.beg);
 			string etStr = "    ";
 			for (i = 0; i < 12; i++) {
 				for (j = 0; j < 4; j++) {
@@ -307,7 +309,7 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 			mAvET[13] = mAvET[1];
 		}
 	}
-	mMlcm->setAslopeAndNuh(mFbasin, nuh);
+	mMlcm->setNuh(nuh);
 	mFitness->setMeasPerDay(mMeasPerDay);
 	mMlcm->setWarmingSteps(mWarmingDays * mMeasPerDay);
 	deckIn.close();
@@ -372,11 +374,12 @@ void ModelsShell::writeOutFormat(ofstream &fout, const int *date, const int &i, 
 		fout << value;
 		return;
 	case 4:
-		fout << nMonth << " " << date[0] << " " << (max(0., mP[begPoint + i] - mET[begPoint + i])) * mOutFormat << " "
+		fout << nMonth << " " << date[0] << " " << mPminusET[begPoint + i] * mOutFormat << " "
 			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
 		return;
 	case 5:
-		fout << nMonth << " " << date[0] << " " << mP[begPoint + i] * mOutFormat << " " << mET[begPoint + i] * mOutFormat << " "
+		fout << nMonth << " " << date[0] << " " << mP[begPoint + i] * mFbasin * mOutFormat << " " 
+			<< mET[begPoint + i]  * mFbasin * mOutFormat << " "
 			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
 		return;
 	}
@@ -408,20 +411,21 @@ void ModelsShell::readPcp(const double &format, const wchar_t *filename)
 		mPcpBeg[2] += 2000;
 	mP.clear();
 	mET.clear();
-	mP.push_back(tmp * mPcpFormat);
+	tmp *= mPcpFormat;
+	mP.push_back(tmp);
 	int *nowDate = new int [3];
 	nowDate[0] = day;
 	nowDate[1] = month / 100;
 	nowDate[2] = month % 100;
-	mET.push_back(makeET(nowDate, mP.back()));
+	mET.push_back(makeET(nowDate, tmp));
 	int i = 1;
 	while (!pcpIn.ios::eof()) {
 		if (i % mMeasPerDay == 0)
 			incDate(nowDate);
 		readInFormat(pcpIn, code, month, day, tmp);
 		tmp *= mPcpFormat;
-		mET.push_back(makeET(nowDate, tmp) * mFbasin);
-		mP.push_back(tmp * mFbasin);
+		mP.push_back(tmp);
+		mET.push_back(makeET(nowDate, tmp));
 		if (i++ == 1000000) {
 			pcpIn.close();
 			mP.clear();
@@ -431,12 +435,12 @@ void ModelsShell::readPcp(const double &format, const wchar_t *filename)
 		}
 	}
 	delete[] nowDate;
-	mMlcm->setPandET(&mP, &mET);
 	if (!mDat.empty()) {
 		mGap = makeTheGap(mDatBeg, mPcpBeg);
 		mMlcm->setRealData(&mDat, --mGap * mMeasPerDay);
 		mFitness->setRealVal(&mDat, mGap);
 	}
+	setPminusET();
 	pcpIn.close();
 }
 
@@ -474,6 +478,7 @@ void ModelsShell::readDat(const double &format, const wchar_t *filename)
 	mGap = makeTheGap(mDatBeg, mPcpBeg);
 	mMlcm->setRealData(&mDat, --mGap * mMeasPerDay);
 	mFitness->setRealVal(&mDat, mGap);
+	setPminusET();
 }
 
 int ModelsShell::makeTheGap(const int *date1, const int *date2) const		//positive if date1 is after date2
@@ -591,5 +596,32 @@ int ModelsShell::getIterNum() const
 		return 11;
 	default:
 		throw(0);
+	}
+}
+
+void ModelsShell::setPminusET()
+{
+	unsigned int i;
+	mPminusET.clear();
+	for (i = 0; i < mP.size(); i++) {
+		mPminusET.push_back(max(mP[i] - mET[i], 0.) * mFbasin);
+	}
+	if (!mDat.empty()) {
+		double datAv = 0., pAv = 0.;
+		for (i = 0; i < mDat.size(); i++) {
+			datAv += mDat[i];
+		}
+		datAv /= (double) mDat.size();
+		for (i = 0; i < mPminusET.size(); i++) {
+			pAv += mPminusET[i];
+		}
+		pAv /= (double) mPminusET.size();
+		double eqKoeff = 1.1 * datAv / pAv;
+		if (eqKoeff == 1.)
+			return;
+		mFbasin *= eqKoeff;
+		for (i = 0; i < mPminusET.size(); i++) {
+			mPminusET[i] *= eqKoeff;
+		}
 	}
 }
