@@ -5,7 +5,7 @@
 #include "Gamma.h"
 #include "Mlcm.h"
 
-Mlcm::Mlcm(vector<double> *PminusET) :
+Mlcm::Mlcm(vector<double> *P, vector<double> *ET) :
 	mRealBeg(0),
 	mRealEnd(0),
 	mN(0),
@@ -16,7 +16,8 @@ Mlcm::Mlcm(vector<double> *PminusET) :
 	mWarmingSteps(0),
 	mMinC(0.5),
 	mMaxC(1),
-	mPminusET(PminusET)
+	mP(P),
+	mET(ET)
 {
 	mClick = new int (0);
 	mAlpha = new double [11];
@@ -83,7 +84,7 @@ vector<double> Mlcm::makeRunoff(const int &timeBeg, const int &timeEnd) const
 	int i;
 	int WarmingBeg = max (timeBeg - mWarmingSteps, 0);
 	for (i = WarmingBeg; i < timeEnd; i++) {
-		Qsum.push_back(makeStep((*mPminusET)[i], state));
+		Qsum.push_back(makeStep((*mP)[i], (*mET)[i], state));
 	}
 	vector<double> Q;
 	int a2 = min(mRealBeg + 1, timeEnd);
@@ -127,8 +128,10 @@ double Mlcm::countUhT(const vector<double> &Qsum, const int &time) const
 	return sum;
 }
 
-double Mlcm::makeStep(double P, vector<double> &state) const
+double Mlcm::makeStep(double P, double ET, vector<double> &state) const
 {
+	int i;
+	P = max(P - ET, 0.);
 	if (P != 0.) {
 		if (mN == 0) {
 			state[0] += P;
@@ -138,7 +141,7 @@ double Mlcm::makeStep(double P, vector<double> &state) const
 				state[0] += P - mAlpha[0];
 				P = mAlpha[1];
 			}
-			for (int i = 1; i <= mN; i++) {
+			for (i = 1; i <= mN; i++) {
 				if (P + state[i] < mZ[i - 1]) {
 					state[i] += P;
 					break;
@@ -154,8 +157,18 @@ double Mlcm::makeStep(double P, vector<double> &state) const
 			}
 		}
 	}
-	double sum = 0;
-	for (int i = 0; i <= mN; i++) {
+	double sum = 0;/*
+	for (i = 0; i <= 0; i++) {
+		if (state[i] > ET) {
+			state[i] -= ET;
+			ET = 0.;
+		}
+		else {
+			ET -= state[i];
+			state[i] = 0.;
+		}
+	}*/
+	for (i = 0; i <= mN; i++) {
 		sum += min(state[i], mAlpha[i]);
 		state[i] = max(state[i] - mAlpha[i], 0.);
 	}

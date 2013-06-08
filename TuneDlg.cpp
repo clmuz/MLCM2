@@ -125,7 +125,8 @@ bool TuneDlg::doFileName(bool loadFile, CString &edit_str, const CString &format
 	if (edit_str != L"")
 		return 1;
 	CString filters = L"txt (*.txt)|*.txt|Deck file (*.deck)|*.deck|Precipitation file (*.pcp)|*.pcp|";
-	filters += L"Real data (*.dat)|*.dat|Settings file (*.config)|*.config|MLCM parameters (*.param)|All Files (*.*)|*.*||";
+	filters += L"Real data (*.dat)|*.dat|Settings file (*.config)|*.config|MLCM parameters (*.param)";
+	filters += L"|*.param|All Files (*.*)|*.*||";
 	CString format1 = L"*" + format;
 	CFileDialog fileDlg(loadFile, format, format1, 6UL, filters);
 	if (fileDlg.DoModal() == IDOK) {

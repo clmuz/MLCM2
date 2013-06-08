@@ -28,7 +28,7 @@ ModelsShell::ModelsShell() :
 	mDat.clear();
 	mET.clear();
 	mAvET = new double [14];
-	mMlcm = new Mlcm(&mPminusET);
+	mMlcm = new Mlcm(&mP, &mET);
 }
 
 ModelsShell::~ModelsShell()
@@ -71,7 +71,7 @@ void ModelsShell::printPrediction(const int *begDate, const int *endDate)
 {
 	int dayBeg = makeTheGap(begDate, mPcpBeg);
 	int dayEnd = makeTheGap(endDate, mPcpBeg);
-	if ((--dayBeg < 0) || (--dayEnd * mMeasPerDay > (int) mP.size()))
+	if ((--dayBeg < 0) || (--dayEnd * mMeasPerDay > (int) mP.size()) || (dayBeg > dayEnd))
 		throw(1);
 	ofstream rout(mOutput, ios::out);
 	if (!rout)
@@ -105,7 +105,8 @@ double ModelsShell::printPrediction(const int *begDate, const int *endDate, cons
 	if((--dayBeg < 0)
 		|| (--dayEnd * mMeasPerDay > (int) mP.size())
 		|| (dayBeg - mGap < 0)
-		|| ((dayEnd - mGap - dayBeg + 1) * mMeasPerDay > (int) mDat.size()))
+		|| ((dayEnd - mGap - dayBeg + 1) * mMeasPerDay > (int) mDat.size())
+		|| (dayBeg > dayEnd))
 		throw(1);
 	ofstream rout(mOutput, ios::out);
 	if (!rout)
@@ -157,7 +158,8 @@ void ModelsShell::setFitnessBegEnd(const int *begDate, const int *endDate)
 	if((--begDay < 0)
 		|| (--endDay * mMeasPerDay > (int) mP.size())
 		|| (begDay - mGap < 0)
-		|| ((endDay - mGap - begDay + 1) * mMeasPerDay > (int) mDat.size()))
+		|| ((endDay - mGap - begDay + 1) * mMeasPerDay > (int) mDat.size())
+		|| (begDay > endDay))
 		throw(1);
 	mFitness->setBegEnd(begDay, endDay);
 }
@@ -293,7 +295,6 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 			basinAndNuh.seekg(29, basinAndNuh.beg);
 			mEtWay = 0;
 			basinAndNuh >> mFbasin >> nuh;
-			//mFbasin *= 0.0005;						//TODO
 			mFbasin *= fbasinFormat;
 			stringstream et (str[5]);
 			et.seekg(20, et.beg);
@@ -302,13 +303,14 @@ void ModelsShell::readDeck(const double fbasinFormat, const double etFormat, con
 				for (j = 0; j < 4; j++) {
 					et >> etStr[j];
 				}
-				mAvET[i + 1] = etFormat * atof(etStr.c_str()) / (double) mMeasPerDay;
+				mAvET[i + 1] = etFormat * atof(etStr.c_str());
 				etStr = "    ";
 			}
 			mAvET[0] = mAvET[12];
 			mAvET[13] = mAvET[1];
 		}
 	}
+	mFbasin *= 0.3048 * 3. / 25.4;
 	mMlcm->setNuh(nuh);
 	mFitness->setMeasPerDay(mMeasPerDay);
 	mMlcm->setWarmingSteps(mWarmingDays * mMeasPerDay);
@@ -374,12 +376,12 @@ void ModelsShell::writeOutFormat(ofstream &fout, const int *date, const int &i, 
 		fout << value;
 		return;
 	case 4:
-		fout << nMonth << " " << date[0] << " " << mPminusET[begPoint + i] * mOutFormat << " "
+		fout << nMonth << " " << date[0] << " " << i % mMeasPerDay + 1 << " " << mP[begPoint + i] * mOutFormat << " "
 			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
 		return;
 	case 5:
-		fout << nMonth << " " << date[0] << " " << mP[begPoint + i] * mFbasin * mOutFormat << " " 
-			<< mET[begPoint + i]  * mFbasin * mOutFormat << " "
+		fout << nMonth << " " << date[0] << " " << i % mMeasPerDay + 1 << " " << mP[begPoint + i] * mOutFormat << " " 
+			<< mET[begPoint + i] * mOutFormat << " "
 			<< getRealData(begPoint + mGap * mMeasPerDay + i) * mOutFormat << " " << value * mOutFormat;
 		return;
 	}
@@ -424,8 +426,8 @@ void ModelsShell::readPcp(const double &format, const wchar_t *filename)
 			incDate(nowDate);
 		readInFormat(pcpIn, code, month, day, tmp);
 		tmp *= mPcpFormat;
-		mP.push_back(tmp);
-		mET.push_back(makeET(nowDate, tmp));
+		mP.push_back(tmp * mFbasin);
+		mET.push_back(makeET(nowDate, tmp) * mFbasin);
 		if (i++ == 1000000) {
 			pcpIn.close();
 			mP.clear();
@@ -440,7 +442,6 @@ void ModelsShell::readPcp(const double &format, const wchar_t *filename)
 		mMlcm->setRealData(&mDat, --mGap * mMeasPerDay);
 		mFitness->setRealVal(&mDat, mGap);
 	}
-	setPminusET();
 	pcpIn.close();
 }
 
@@ -478,7 +479,6 @@ void ModelsShell::readDat(const double &format, const wchar_t *filename)
 	mGap = makeTheGap(mDatBeg, mPcpBeg);
 	mMlcm->setRealData(&mDat, --mGap * mMeasPerDay);
 	mFitness->setRealVal(&mDat, mGap);
-	setPminusET();
 }
 
 int ModelsShell::makeTheGap(const int *date1, const int *date2) const		//positive if date1 is after date2
@@ -596,32 +596,5 @@ int ModelsShell::getIterNum() const
 		return 11;
 	default:
 		throw(0);
-	}
-}
-
-void ModelsShell::setPminusET()
-{
-	unsigned int i;
-	mPminusET.clear();
-	for (i = 0; i < mP.size(); i++) {
-		mPminusET.push_back(max(mP[i] - mET[i], 0.) * mFbasin);
-	}
-	if (!mDat.empty()) {
-		double datAv = 0., pAv = 0.;
-		for (i = 0; i < mDat.size(); i++) {
-			datAv += mDat[i];
-		}
-		datAv /= (double) mDat.size();
-		for (i = 0; i < mPminusET.size(); i++) {
-			pAv += mPminusET[i];
-		}
-		pAv /= (double) mPminusET.size();
-		double eqKoeff = 1.1 * datAv / pAv;
-		if (eqKoeff == 1.)
-			return;
-		mFbasin *= eqKoeff;
-		for (i = 0; i < mPminusET.size(); i++) {
-			mPminusET[i] *= eqKoeff;
-		}
 	}
 }

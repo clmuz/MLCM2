@@ -64,7 +64,8 @@ bool CMLCMDlg::doFileName(bool loadFile, CString &edit_str, const CString &forma
 	if (edit_str != L"")
 		return 1;
 	CString filters = L"txt (*.txt)|*.txt|Deck file (*.deck)|*.deck|Precipitation file (*.pcp)|*.pcp|";
-	filters += L"Real data (*.dat)|*.dat|Settings file (*.config)|*.config|MLCM parameters (*.param)|All Files (*.*)|*.*||";
+	filters += L"Real data (*.dat)|*.dat|Settings file (*.config)|*.config|MLCM parameters (*.param)";
+	filters += L"|*.param|All Files (*.*)|*.*||";
 	CString format1 = L"*" + format;
 	CFileDialog fileDlg(loadFile, format, format1, 6UL, filters);
 	if (fileDlg.DoModal() == IDOK) {
@@ -86,7 +87,7 @@ void CMLCMDlg::loadConfig(const wchar_t *configName)
 	mH->setCalibrationType(doCalibrationType(calType));
 	mH->setFitnessType(doFitnessType(fitnType), doFitnessType(valType));
 	confin >> mComboFormat;
-	OnCbnSelchangeFormat();
+	setFormats();
 	confin >> mOutFormat;
 	mH->setOutFormat(mOutFormat--);
 	confin >> mWarmingDays;
@@ -427,7 +428,7 @@ void CMLCMDlg::OnBnClickedInoutformatinfo()
 	CString text = L"»нформаци€ по форматам входных и выходных данных\n\n";
 	text += L"1:  од - мес€ц - день - данные\n2: ћес€ц - день - данные\n3: ƒанные (началом считаетс€ 1 €нвар€ 2013)\n";
 	text += L"4 (дл€ таблиц): (“олько дл€ выходных данных)\n";
-	text += L"   ћес€ц - день - осадки минус испарени€ - фактические данные - смоделированные данные\n";
+	text += L"   ћес€ц - день - осадки - фактические данные - смоделированные данные\n";
 	text += L"5 (дл€ таблиц плюс испарени€): (“олько дл€ выходных данных)\n";
 	text += L"   ћес€ц - день - осадки - испарени€ - фактические данные - смоделированные данные\n\n";
 	text += L"ћес€ц в формате перва€ одна-две цифры - номер мес€ца, вторые две - год, то есть 396 - март 1996, а 1201 - декабрь 2001\n";
@@ -773,6 +774,12 @@ void CMLCMDlg::OnBnClickedClearloadmlcm()
 
 void CMLCMDlg::OnCbnSelchangeFormat()
 {
+	UpdateData(1);
+	setFormats();
+}
+
+void CMLCMDlg::setFormats()
+{
 	switch (mComboFormat) {
 	//RUS
 	case 0:
@@ -784,8 +791,8 @@ void CMLCMDlg::OnCbnSelchangeFormat()
 	//US
 	case 1:
 		mPcpFormat = 7.05555556e-6;	// inch/hour
-		mEtFormat = 7.05555556e-6;		// inch/hour
-		mQFormat = 0.0283168466;	// foot3/s
+		mEtFormat = 2.7777778e-7;		// inch/hour
+		mQFormat = 1;	// foot3/s
 		mFbasinFormat = 2.58998811e6;	// mi2
 		break;
 	}

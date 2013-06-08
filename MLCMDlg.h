@@ -39,6 +39,8 @@ private:
 	void printError(const int &a);
 	fitnessType doFitnessType(const int &intFitn) const;
 	calibrationType doCalibrationType(const int &intCal) const;
+	//Устанавливает размерности
+	void setFormats();
 	//Модель
 	Hydrograph *mH;
 	//Окно справки
