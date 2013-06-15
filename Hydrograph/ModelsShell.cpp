@@ -613,11 +613,17 @@ void ModelsShell::readSatellite() {
 	for (int i = 0; i < gap; i++) {
 		mSat.push_back(-1);
 	}
+	if (gap <= 0) {
+		nowDate[0] = mPcpBeg[0];
+		nowDate[1] = mPcpBeg[1];
+		nowDate[2] = mPcpBeg[2];
+		nowHour = 1;
+	}
 	while (satin >> newDate[2] >> newDate[1] >> newDate[0] >> newHour) {
 		while (!eq(nowDate, nowHour, newDate, newHour)) {
 			mSat.push_back(value * .01 * mFbasin);
-			if (nowHour++ == 24) {
-				nowHour = 0;
+			if (nowHour++ == mMeasPerDay) {
+				nowHour = 1;
 				incDate(nowDate);
 			}
 		}
