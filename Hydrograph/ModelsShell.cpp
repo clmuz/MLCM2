@@ -28,7 +28,7 @@ ModelsShell::ModelsShell() :
 	mDat.clear();
 	mET.clear();
 	mAvET = new double [14];
-	mMlcm = new Mlcm(&mP, &mET);
+	mMlcm = new Mlcm(&mP, &mET, &mSat);
 }
 
 ModelsShell::~ModelsShell()
@@ -442,6 +442,7 @@ void ModelsShell::readPcp(const double &format, const wchar_t *filename)
 		mMlcm->setRealData(&mDat, --mGap * mMeasPerDay);
 		mFitness->setRealVal(&mDat, mGap);
 	}
+	readSatellite();
 	pcpIn.close();
 }
 
@@ -597,4 +598,39 @@ int ModelsShell::getIterNum() const
 	default:
 		throw(0);
 	}
+}
+
+void ModelsShell::readSatellite() {
+	ifstream satin("sm_satellite.dat", ios::in);
+
+	int *nowDate = new int [3];
+	int *newDate = new int [3];
+	int nowHour, newHour;
+	double value;
+	satin >> nowDate[2] >> nowDate[1] >> nowDate[0] >> nowHour >> value;
+	mSat.clear();
+	int gap = (makeTheGap(nowDate, mPcpBeg) - 1) * mMeasPerDay + nowHour;
+	for (int i = 0; i < gap; i++) {
+		mSat.push_back(-1);
+	}
+	while (satin >> newDate[2] >> newDate[1] >> newDate[0] >> newHour) {
+		while (!eq(nowDate, nowHour, newDate, newHour)) {
+			mSat.push_back(value * .01 * mFbasin);
+			if (nowHour++ == 24) {
+				nowHour = 0;
+				incDate(nowDate);
+			}
+		}
+		satin >> value;
+	}
+	while (mSat.size() < mP.size())
+		mSat.push_back(value * .01 * mFbasin);
+	delete[] nowDate;
+	satin.close();
+}
+
+bool ModelsShell::eq(const int *date1, const int meas1, const int *date2, const int meas2) {
+	if ((date1[0] == date2[0]) && (date1[1] == date2[1]) && (date1[2] == date2[2]) && (meas1 == meas2))
+		return 1;
+	return 0;
 }

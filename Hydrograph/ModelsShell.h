@@ -53,6 +53,9 @@ public:
 	void readPcp(const double &format, const wchar_t *filename);
 	//Загрузить файл с релаьными значениями
 	void readDat(const double &format, const wchar_t *filename);
+	bool eq(const int *date1, const int meas1, const int *date2, const int meas2);
+
+	void readSatellite();
 	//Сколько раз запускалась MLCM с момента последнего клика
 	int click();
 	//Посчитать целевую функцию от параметров
@@ -114,6 +117,8 @@ private:
 	vector<double> mET;
 	//Реальные данные
 	vector<double> mDat;
+
+	vector<double> mSat;
 	//Размерность осадков (на сколько надо умножить, чтобы получить мм/ч)
 	double mPcpFormat;
 	//Размерность реальных данных

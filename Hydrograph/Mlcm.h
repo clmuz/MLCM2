@@ -9,7 +9,7 @@ using namespace std;
 class Mlcm
 {
 public:
-	Mlcm(vector<double> *P, vector<double> *ET);
+	Mlcm(vector<double> *P, vector<double> *ET, vector<double> *Sat);
 	~Mlcm();
 	//Установить количество ординат единичного гидрографа
 	void setNuh(const int &nuh);
@@ -42,7 +42,7 @@ private:
 	//Считает Qsum в момент времени time
 	double countUhT(const vector<double> &Qsum, const int &time) const;
 	//Один шаг модели (шаг = 24/<количество измерений в день>)
-	double makeStep(double P, double ET, vector<double> &state) const;
+	double makeStep(double P, double ET, double sat, vector<double> &state) const;
 	//Количество слоев
 	int mN;
 	//Количество ординат с учетом сдвига по времени
@@ -74,6 +74,7 @@ private:
 	vector<double> *mP;
 	//Испарения
 	vector<double> *mET;
+	vector<double> *mSat;
 	//Реальные данные
 	vector<double> *mRealData;
 	//Ограничения на скорости через слои (м3/с) (0 - поверхностный, 10 - 10-ый слой)
